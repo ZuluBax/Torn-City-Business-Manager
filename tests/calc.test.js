@@ -115,3 +115,12 @@ test('date presets', () => {
   assert.deepEqual(U.rangeFromPreset('last7', null, '2026-03-02'), { from: '2026-02-24', to: '2026-03-02' });
   assert.equal(U.daysInclusive('2026-03-28', '2026-03-30'), 3); // spans a DST change in the UK
 });
+
+test('formatElapsed gives compact activity timer text', () => {
+  assert.equal(U.formatElapsed(45000), '45s');
+  assert.equal(U.formatElapsed(12 * 60000), '12m');
+  assert.equal(U.formatElapsed((3 * 60 + 5) * 60000), '3h 05m');
+  assert.equal(U.formatElapsed((4 * 24 + 2) * 3600000), '4d 2h');
+  assert.equal(U.formatElapsed(-1), '—');
+  assert.equal(U.formatElapsed(NaN), '—');
+});

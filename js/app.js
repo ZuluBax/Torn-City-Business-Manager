@@ -119,6 +119,9 @@
     applyTheme();
     db.onChange(scheduleRender);
     watchTornPayments();
+    // One clock for every "last active" badge on screen; badges are re-found each tick, so
+    // re-renders and page changes need no setup or cleanup.
+    setInterval(() => ui.tickLastActive(), 30000);
     window.addEventListener('hashchange', render);
     if (!location.hash) history.replaceState(null, '', '#/dashboard');
     render();

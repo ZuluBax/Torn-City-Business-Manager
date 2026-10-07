@@ -61,7 +61,7 @@ but that copy keeps its own separate browser data.
 |---|---|
 | Server | `server/server.py`. Uses only Python's standard library, so nothing to install. Runs as the systemd service `dukes-music-box` (the internal name, kept for compatibility) as your SSH user, on port 8010. It starts on boot and restarts if it crashes. |
 | Backups | A copy is saved to `~/dukes-music-box/backups/dukes-YYYY-MM-DD.db` every day, and the last 30 are kept. |
-| Torn | The Pi holds the API key (browsers only see "a key is set"). It refreshes company funds and trains available every hour. |
+| Torn | The Pi holds the API key (browsers only see "a key is set"). It refreshes company funds, trains available and each employee's "last active" time every 15 minutes. |
 | Several devices | Other devices pick up changes within about 15 seconds. If two devices edit at once, the later save is refused and the page refreshes, so nothing is overwritten by accident. |
 | Security | Home network only, with no login. Anyone on your Wi-Fi can open it. **Don't port-forward it.** For access away from home, use Tailscale. |
 

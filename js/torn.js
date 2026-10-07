@@ -73,8 +73,20 @@
       dailyIncome: c.daily_income, weeklyIncome: c.weekly_income, daysOld: c.days_old,
       funds: d.company_funds, trainsAvailable: d.trains_available, advertisingBudget: d.advertising_budget,
       popularity: d.popularity, efficiency: d.efficiency, environment: d.environment,
+      lastActive: lastActiveMap(data.company_employees),
       fetchedAt,
     };
+  }
+
+  // tornId -> { at: epoch ms, status: 'Online' | 'Idle' | 'Offline' }. Employees with a missing
+  // or malformed last_action are left out so the page shows "—" rather than a made-up time.
+  function lastActiveMap(employees) {
+    const out = {};
+    for (const [tornId, t] of Object.entries(employees || {})) {
+      const la = t && t.last_action;
+      if (la && Number.isFinite(la.timestamp) && la.timestamp > 0) out[tornId] = { at: la.timestamp * 1000, status: String(la.status || 'Offline') };
+    }
+    return out;
   }
 
   /*
@@ -209,7 +221,7 @@
   }
 
   return {
-    KEY_PATTERN, fetchCompany, buildPlan, companySnapshot, setupSpend, isEmpty, stripTags,
+    KEY_PATTERN, fetchCompany, buildPlan, companySnapshot, lastActiveMap, setupSpend, isEmpty, stripTags,
     EVENTS_URL, fetchEvents, isMoneyEvent, parseMoneyEvent, trainCountFrom, classifyMoneyEvent,
   };
 });

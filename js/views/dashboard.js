@@ -76,7 +76,7 @@
           <div><dt>Staff</dt><dd>${s.tornCompany.employeesHired}/${s.tornCompany.employeesCapacity}</dd></div>
           <div><dt>Daily income</dt><dd>${ui.money(s.tornCompany.dailyIncome)}</dd></div>
         </dl>
-        <p class="small muted">As of ${esc(U.formatDateTime(s.tornCompany.fetchedAt))}.${db.mode === 'server' ? ' The Pi refreshes these every hour.' : ''}</p>`,
+        <p class="small muted">As of ${esc(U.formatDateTime(s.tornCompany.fetchedAt))}.${db.mode === 'server' ? ' The Pi refreshes these every 15 minutes.' : ''}</p>`,
       { actions: `<button type="button" class="btn btn-sm btn-ghost" data-q="torn">${ui.icon('download')} Refresh from Torn</button>` }) };
     }
     blocks.financial = { label: 'Financial summary', html: ui.panel('Financial summary', ui.barList([

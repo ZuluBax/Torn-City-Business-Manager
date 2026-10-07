@@ -159,12 +159,22 @@
     return slug || 'company';
   }
 
+  // 45000 -> "45s", 3h5m -> "3h 05m", 4d2h -> "4d 2h". Compact elapsed time for activity timers.
+  function formatElapsed(ms) {
+    if (!(ms >= 0)) return '—';
+    const s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    if (d) return `${d}d ${h % 24}h`;
+    if (h) return `${h}h ${pad(m % 60)}m`;
+    if (m) return `${m}m`;
+    return `${s}s`;
+  }
+
   function sum(list, fn) { return list.reduce((acc, x) => acc + (fn ? fn(x) : x), 0); }
 
   return {
     isISODate, toISODate, todayISO, parseISODate, epochDay, fromEpochDay, addDays,
     daysInclusive, inRange, monthKey, DATE_PRESETS, rangeFromPreset,
-    formatMoney, formatNumber, formatDate, formatMonth, formatDateTime, parseMoney,
+    formatMoney, formatNumber, formatDate, formatMonth, formatDateTime, formatElapsed, parseMoney,
     escapeHtml, uid, sum, slugify,
   };
 });

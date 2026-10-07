@@ -69,7 +69,7 @@
 
       ${ui.panel('Torn API', `
         <p class="muted small">Used when you press <strong>Import from Torn</strong>. The app reads your company (employees, wages, funds, trains available, company news) and shows you a preview before saving anything. Use a <strong>Limited Access</strong> key. ${onPi
-          ? 'The key is kept on the Pi (never sent back to browsers or put in backups). The Pi also refreshes company funds and trains available every hour.'
+          ? 'The key is kept on the Pi (never sent back to browsers or put in backups). The Pi also refreshes company funds, trains available and staff activity every 15 minutes.'
           : 'The key stays in this browser and is never put in backup files.'}</p>
         <form id="torn-form" class="inline-add" novalidate>
           <div class="field"><label class="sr-only" for="torn-key">Torn API key</label>
@@ -165,7 +165,7 @@
     }, { onSuccess() { ui.toast('Torn API key saved'); } });
     const removeKey = el.querySelector('[data-act=key-remove]');
     if (removeKey) removeKey.addEventListener('click', async () => {
-      const ok = await ui.confirmDialog({ title: 'Remove Torn API key?', message: 'Import from Torn and the hourly refresh will stop until you add a key again.', confirmText: 'Remove key', danger: true });
+      const ok = await ui.confirmDialog({ title: 'Remove Torn API key?', message: 'Import from Torn and the automatic refresh will stop until you add a key again.', confirmText: 'Remove key', danger: true });
       if (ok) ui.runAction(() => S.saveSettings({ tornApiKey: '' }), 'Torn API key removed');
     });
     el.querySelector('[data-act=key-toggle]').addEventListener('click', (e) => {

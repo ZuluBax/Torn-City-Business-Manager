@@ -14,7 +14,7 @@ this server is a small, careful document store:
   POST /api/replace  {data, activity, clearSecrets}         -> {"version": n}
   GET  /api/torn/company           -> Torn API reply, fetched here with the stored key
 
-Background thread: refreshes the Torn company snapshot hourly and writes a daily backup.
+Background thread: refreshes the Torn company snapshot every 15 minutes and writes a daily backup.
 """
 import argparse
 import json
@@ -39,7 +39,7 @@ SECRET_FIELD = "tornApiKey"
 MAX_BODY = 20 * 1024 * 1024
 STATIC_ROOTS = {"css", "js", "assets"}
 TORN_URL = "https://api.torn.com/company/?selections=profile,employees,detailed,news&comment=TornCompanyManager&key="
-TORN_REFRESH_SECONDS = 3600
+TORN_REFRESH_SECONDS = 900  # also feeds the employees' "last active" timers, so hourly is too stale
 TORN_EVENTS_URL = "https://api.torn.com/user/?selections=events&comment=TornCompanyManager&key="
 TORN_EVENTS_SECONDS = 900  # Torn only returns the latest events, so poll often enough not to miss any
 BACKUPS_KEPT = 30
@@ -254,6 +254,17 @@ def fetch_torn(key: str, url: str = TORN_URL) -> bytes:
         raise TornHTTPError(e.code) from None
 
 
+def last_active_map(employees) -> dict:
+    """Mirror of lastActiveMap() in js/torn.js: tornId -> {at: epoch ms, status}."""
+    out = {}
+    for torn_id, t in (employees or {}).items():
+        la = t.get("last_action") if isinstance(t, dict) else None
+        ts = la.get("timestamp") if isinstance(la, dict) else None
+        if isinstance(ts, (int, float)) and not isinstance(ts, bool) and ts > 0:
+            out[str(torn_id)] = {"at": int(ts * 1000), "status": str(la.get("status") or "Offline")}
+    return out
+
+
 def snapshot_from_torn(data: dict) -> dict:
     """Mirror of companySnapshot() in js/torn.js — keep the two in step."""
     c, d = data["company"], data["company_detailed"]
@@ -264,6 +275,7 @@ def snapshot_from_torn(data: dict) -> dict:
         "funds": d.get("company_funds"), "trainsAvailable": d.get("trains_available"),
         "advertisingBudget": d.get("advertising_budget"), "popularity": d.get("popularity"),
         "efficiency": d.get("efficiency"), "environment": d.get("environment"),
+        "lastActive": last_active_map(data.get("company_employees")),
         "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
@@ -302,7 +314,7 @@ def background_loop(store: Store, backup_dir: Path, stop: threading.Event):
                     else:
                         store.update_settings_fields({"tornCompany": snapshot_from_torn(data)})
                         log.info("Torn company figures refreshed")
-                except Exception as e:  # network blips are expected; try again next hour
+                except Exception as e:  # network blips are expected; try again next round
                     log.warning("Torn refresh failed: %s", type(e).__name__)
         stop.wait(300)
 
@@ -431,7 +443,7 @@ def main():
     p.add_argument("--app-dir", type=Path, default=here.parent, help="folder containing index.html")
     p.add_argument("--data-dir", type=Path, default=Path.home() / "dukes-music-box" / "data")
     p.add_argument("--backup-dir", type=Path, default=Path.home() / "dukes-music-box" / "backups")
-    p.add_argument("--no-background", action="store_true", help="disable hourly Torn refresh and daily backups (tests)")
+    p.add_argument("--no-background", action="store_true", help="disable background Torn refresh and daily backups (tests)")
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")

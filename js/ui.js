@@ -282,6 +282,42 @@
     return `<a href="#/employees/${esc(e.id)}" class="emp-link">${esc(e.name)}</a>`;
   }
 
+  // ---------- "Last active" timers ----------
+  // Torn's last_action timestamp comes from the company snapshot. The badge counts up from it
+  // in the browser (tickLastActive), so it stays live between snapshot refreshes; it only goes
+  // stale if the employee becomes active again before the next refresh.
+
+  function lastActiveOf(tornId) {
+    const tc = DMB.db.settings().tornCompany;
+    return (tc && tc.lastActive && tc.lastActive[tornId]) || null;
+  }
+
+  // Under 5 minutes is what Torn itself calls "Online"; a day+ is worth a nudge, 3 days+ a warning.
+  function lastActiveLook(at, now) {
+    const ms = now - at;
+    if (ms < 5 * 60000) return { text: 'Online', tone: 'green' };
+    const text = `${U.formatElapsed(ms)} ago`;
+    if (ms >= 3 * 86400000) return { text, tone: 'red' };
+    if (ms >= 86400000) return { text, tone: 'amber' };
+    return { text, tone: 'muted' };
+  }
+
+  function lastActiveBadge(tornId) {
+    const la = lastActiveOf(tornId);
+    if (!la) return '<span class="muted" title="No Torn activity data yet. Import from Torn to fetch it.">—</span>';
+    const { text, tone } = lastActiveLook(la.at, Date.now());
+    return `<span class="badge badge-${tone}" data-active-at="${la.at}" title="Last action ${esc(U.formatDateTime(la.at))}">${esc(text)}</span>`;
+  }
+
+  function tickLastActive(root) {
+    const now = Date.now();
+    (root || document).querySelectorAll('[data-active-at]').forEach((el) => {
+      const { text, tone } = lastActiveLook(Number(el.dataset.activeAt), now);
+      if (el.textContent !== text) el.textContent = text;
+      el.className = `badge badge-${tone}`;
+    });
+  }
+
   function emptyState(title, text, actionHtml) {
     return `<div class="empty"><div class="empty-icon">${icon('train')}</div><h3>${esc(title)}</h3>${text ? `<p>${esc(text)}</p>` : ''}${actionHtml || ''}</div>`;
   }
@@ -394,7 +430,7 @@
   DMB.ui = {
     icon, toast, openModal, confirmDialog, readForm, clearErrors, showErrors, bindSubmit, runAction,
     field, options, mapOptions, employeeOptions, badge, statusBadge, payStatusBadge, paymentTypeBadge,
-    trainTypeBadge, money, employeeLink, emptyState, table, pageHeader, panel, statCard, barList, dateRangeControls,
+    trainTypeBadge, money, employeeLink, lastActiveOf, lastActiveBadge, tickLastActive, emptyState, table, pageHeader, panel, statCard, barList, dateRangeControls,
     bindFilters, rangeOf, rangeLabel, downloadFile, toCsv,
   };
 })(window.DMB = window.DMB || {});

@@ -11,6 +11,8 @@
     salary: { label: 'Salary (high–low)', fn: (a, b) => b.salary - a.salary },
     start: { label: 'Start date (newest)', fn: (a, b) => (a.e.startDate < b.e.startDate ? 1 : -1) },
     outstanding: { label: 'Outstanding (high–low)', fn: (a, b) => b.stats.outstanding - a.stats.outstanding },
+    // Least recently active first; anyone without Torn activity data sinks to the bottom.
+    active: { label: 'Last active (longest ago)', fn: (a, b) => (a.activeAt || Number.MAX_SAFE_INTEGER) - (b.activeAt || Number.MAX_SAFE_INTEGER) },
   };
   const STATUS_FILTERS = { current: 'Active + Inactive', '': 'All statuses', active: 'Active', inactive: 'Inactive', left: 'Left' };
 
@@ -26,7 +28,7 @@
         if (q && !e.name.toLowerCase().includes(q) && !e.tornId.includes(q)) return false;
         return true;
       })
-      .map((e) => ({ e, salary: C.currentSalary(e), stats: C.employeeStats(data, e, null, ledgers) }))
+      .map((e) => ({ e, salary: C.currentSalary(e), stats: C.employeeStats(data, e, null, ledgers), activeAt: (ui.lastActiveOf(e.tornId) || {}).at }))
       .sort(SORTS[filters.sort].fn);
   }
 
@@ -52,6 +54,7 @@
         { label: 'Salary/day', align: 'right', render: (r) => ui.money(r.salary) },
         { label: 'Start date', render: (r) => U.formatDate(r.e.startDate) },
         { label: 'Status', render: (r) => ui.statusBadge(r.e.status) },
+        { label: 'Last active', render: (r) => ui.lastActiveBadge(r.e.tornId) },
         { label: 'Trains', align: 'right', render: (r) => U.formatNumber(r.stats.trainsReceived) },
         { label: 'Outstanding', align: 'right', render: (r) => (r.stats.outstanding ? `<span class="text-red">${ui.money(r.stats.outstanding)}</span>` : '<span class="muted">—</span>') },
         { label: '', cls: 'actions', render: (r) => `
@@ -108,7 +111,7 @@
         <div class="avatar" aria-hidden="true">${esc(e.name.replace(/\[DEMO\]\s*/, '').slice(0, 1).toUpperCase())}</div>
         <div class="profile-title">
           <h1>${esc(e.name)}</h1>
-          <p class="page-sub">${esc(e.position)} · Torn ID <span class="mono">${esc(e.tornId)}</span> · ${ui.statusBadge(e.status)}</p>
+          <p class="page-sub">${esc(e.position)} · Torn ID <span class="mono">${esc(e.tornId)}</span> · ${ui.statusBadge(e.status)} · Last active ${ui.lastActiveBadge(e.tornId)}</p>
         </div>
         <div class="page-actions">
           <button type="button" class="btn btn-primary" data-act="train">${ui.icon('train')} Record train</button>

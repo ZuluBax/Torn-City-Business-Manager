@@ -64,3 +64,11 @@ test('setup spend is not offered when the maths would be unreliable or already i
   assert.equal(T.buildPlan(noFounding, existing([])).setup, null);
   assert.equal(T.buildPlan(company(), existing([], { setupImported: true })).setup, null);
 });
+
+test('snapshot keeps each employee\'s last action time, skipping missing or bad ones', () => {
+  const data = company();
+  data.company_employees[111].last_action = { status: 'Idle', timestamp: 1759700000, relative: '9 minutes ago' };
+  data.company_employees[222].last_action = { status: 'Offline', timestamp: 'soon' };
+  const snap = T.companySnapshot(data, '2026-10-06T12:00:00Z');
+  assert.deepEqual(snap.lastActive, { 111: { at: 1759700000000, status: 'Idle' } });
+});
