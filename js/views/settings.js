@@ -67,6 +67,14 @@
         ${LISTS.map((cfg) => ui.panel(cfg.title, listEditor(cfg))).join('')}
       </div>
 
+      ${ui.panel('Job limits', `
+        <p class="muted small">The most people you want in each job. Job suggestions on the Employees page give a full job to the strongest people, and point everyone else at their next-best job. Leave a box empty for no limit. Use 0 to never suggest that job.</p>
+        <form id="limits-form" class="form-grid form-grid-limits" novalidate>
+          <p class="form-error" role="alert" hidden></p>
+          ${DMB.jobs.JOBS.map((j) => ui.field({ label: j.name, name: j.name, value: s.jobLimits && s.jobLimits[j.name] != null ? String(s.jobLimits[j.name]) : '', placeholder: 'No limit', attrs: 'inputmode="numeric" autocomplete="off" maxlength="2"' })).join('')}
+          <div class="field-full form-actions"><button type="submit" class="btn btn-primary">Save limits</button></div>
+        </form>`)}
+
       ${ui.panel('Torn API', `
         <p class="muted small">Used when you press <strong>Import from Torn</strong>. The app reads your company (employees, wages, funds, trains available, company news) and shows you a preview before saving anything. Use a <strong>Limited Access</strong> key. ${onPi
           ? 'The key is kept on the Pi (never sent back to browsers or put in backups). The Pi also refreshes company funds, trains available and staff activity every 15 minutes.'
@@ -85,7 +93,7 @@
 
       ${ui.panel('Backup & data', `
         ${onPi
-          ? '<p class="muted">Your data is stored on the Pi and shared by every device that opens this address. The Pi saves a backup copy every night (30 days kept). Exporting a backup file now and then is still a good idea in case the Pi\'s SD card fails.</p>'
+          ? '<p class="muted">Your data is stored on the Pi and shared by every device that opens this address. The Pi saves a backup copy every night (5 days kept). Exporting a backup file now and then is still a good idea in case the Pi\'s SD card fails.</p>'
           : '<p class="muted">Your data lives inside this browser on this PC. <strong>Export a backup regularly</strong> — clearing browser data, or opening the app in a different browser, will not show it.</p>'}
         <p class="small muted">Currently stored: ${counts}.</p>
         <div class="button-row">
@@ -105,6 +113,7 @@
     `;
 
     ui.bindSubmit(el.querySelector('#company-form'), (data) => S.saveSettings(data), { onSuccess() { ui.toast('Settings saved'); } });
+    ui.bindSubmit(el.querySelector('#limits-form'), (data) => S.saveSettings({ jobLimits: data }), { onSuccess() { ui.toast('Job limits saved'); } });
 
     el.querySelectorAll('input[name=theme]').forEach((r) => r.addEventListener('change', () => ui.runAction(() => S.saveSettings({ theme: r.value }))));
 

@@ -1,10 +1,83 @@
 (function (DMB) {
   'use strict';
-  const U = DMB.util, C = DMB.calc, db = DMB.db, S = DMB.services, ui = DMB.ui, F = DMB.forms;
+  const U = DMB.util, C = DMB.calc, db = DMB.db, S = DMB.services, ui = DMB.ui, F = DMB.forms, J = DMB.jobs;
   const esc = U.escapeHtml;
+
+  // ---------- Job fit (stats vs. the Music Store's recommended stats) ----------
+
+  const shortText = (short) => Object.entries(short).map(([k, n]) => `${U.formatNumber(n)} ${k}`).join(' and ');
+  const trainsText = (n) => (n == null ? '' : ` (about ${U.formatNumber(n)} train${n === 1 ? '' : 's'})`);
+
+  // Suggestions depend on the whole team (a limited job goes to the strongest), so they're
+  // worked out once per render. Staff who have left neither get nor take a job.
+  const suggestions = () => J.suggestJobs(db.all('employees').filter((e) => e.status !== 'left'), db.settings().jobLimits);
+
+  // "Cleaner goes to Strongest1" — why someone isn't suggested a job their stats meet.
+  const lostText = (lostTo) => lostTo.map((l) => `${l.job} goes to ${l.takenBy.map((x) => x.name).join(', ')}`).join('; ');
+
+  function jobFitBadge(e, sugs) {
+    const fit = J.jobFit(e);
+    if (!fit) return '<span class="muted" title="No working stats yet. Import from Torn to fetch them.">—</span>';
+    if (e.status === 'left') return '<span class="muted" title="Has left, so no job is suggested.">—</span>';
+    const tag = (tone, text, title) => `<span class="badge badge-${tone}" title="${esc(title)}">${esc(text)}</span>`;
+    const sug = sugs.get(e.id) || { job: null, lostTo: [] };
+    const why = sug.lostTo.length ? ` ${lostText(sug.lostTo)}.` : '';
+    const target = sug.job ? `Suggest ${sug.job}` : 'No open job fits';
+    if (fit.current && !fit.current.meets) return tag('amber', `Below stats · ${target}`, `Short of ${fit.current.job} by ${shortText(fit.current.short)}${trainsText(fit.current.trains)}.${why}`);
+    if (!fit.current) return tag(sug.job ? 'blue' : 'muted', target, `"${e.position}" is not a Music Store job.${why}`);
+    if (sug.job === fit.current.job) return tag('green', 'Right job', `Best job for their stats that has room.${why}`);
+    if (sug.job) return tag('blue', `Move to ${sug.job}`, `${sug.job} is the hardest job they meet that has room.${why}`);
+    return tag('muted', target, `Every job they meet is full.${why}`);
+  }
+
+  // Bold when it differs from their job now, so moves stand out in the list.
+  function suggestedCell(e, sugs) {
+    const sug = e.status !== 'left' && sugs.get(e.id);
+    if (!sug || !sug.job) return '<span class="muted">—</span>';
+    return sug.job === e.position ? esc(sug.job) : `<strong>${esc(sug.job)}</strong>`;
+  }
+
+  function jobFitDetails(e) {
+    const fit = J.jobFit(e);
+    if (!fit) return '<span class="muted">Needs working stats (MAN / INT / END) to compare.</span>';
+    const sugs = suggestions();
+    const sug = sugs.get(e.id);
+    const lines = [jobFitBadge(e, sugs)];
+    if (fit.current && !fit.current.meets) lines.push(`Short of ${esc(fit.current.job)} by ${esc(shortText(fit.current.short))}${esc(trainsText(fit.current.trains))}.`);
+    lines.push(fit.qualifies.length ? `Stats meet: ${fit.qualifies.map(esc).join(', ')}.` : 'Stats don\'t meet any Music Store job yet.');
+    if (sug && sug.lostTo.length) lines.push(`${esc(lostText(sug.lostTo))} (stronger stats).`);
+    return `${lines.join('<br>')}<br><span class="small muted">Based on Torn's recommended stats and your job limits in Settings.</span>`;
+  }
+
+  // "Best for this job": who meets a job's stats, strongest first. Staff who have left are
+  // excluded so the list only suggests people you can actually move.
+  function renderBestForJob(el) {
+    const job = J.findJob(bestFor.job) || J.JOBS[0];
+    const [main, second] = Object.keys(job.needs);
+    const current = db.snapshot().employees.filter((e) => e.status !== 'left');
+    const rows = J.rankForJob(current, job.name).map((r, i) => ({ ...r, rank: i + 1 }));
+    const sugs = suggestions();
+    const limit = (db.settings().jobLimits || {})[job.name];
+    const limitText = Number.isInteger(limit) ? ` Limit: ${limit} ${limit === 1 ? 'person' : 'people'}, so only the top ${limit === 1 ? 'one is' : `${limit} are`} suggested here.` : '';
+    const needs = `Needs ${U.formatNumber(job.needs[main])} ${main} and ${U.formatNumber(job.needs[second])} ${second}.`;
+    el.querySelector('[data-best]').innerHTML = `<p class="small muted">${esc(needs)} Ranked by ${esc(main)}, then ${esc(second)}.${esc(limitText)}</p>` + ui.table({
+      empty: `Nobody meets the ${job.name} stats yet.`,
+      rows,
+      columns: [
+        { label: '#', align: 'right', render: (r) => r.rank },
+        { label: 'Employee', render: (r) => ui.employeeLink(r.employee.id) },
+        { label: main, align: 'right', render: (r) => `<strong>${U.formatNumber(r.stats[main])}</strong>` },
+        { label: second, align: 'right', render: (r) => U.formatNumber(r.stats[second]) },
+        { label: 'Job now', render: (r) => esc(r.employee.position) },
+        { label: 'Suggested job', render: (r) => suggestedCell(r.employee, sugs) },
+        { label: 'Job fit', render: (r) => jobFitBadge(r.employee, sugs) },
+      ],
+    });
+  }
 
   // Kept at module level so filters survive re-renders when data changes.
   const filters = { q: '', status: 'current', position: '', sort: 'name' };
+  const bestFor = { job: J.JOBS[0].name };
 
   const SORTS = {
     name: { label: 'Name (A–Z)', fn: (a, b) => a.e.name.localeCompare(b.e.name) },
@@ -36,6 +109,7 @@
     const data = db.snapshot();
     const ledgers = C.allLedgers(data);
     const rows = rowsFor(data, ledgers);
+    const sugs = suggestions();
     const anyEmployees = data.employees.length > 0;
     const target = el.querySelector('[data-table]');
     if (!anyEmployees) {
@@ -50,7 +124,9 @@
       columns: [
         { label: 'Employee', render: (r) => `${ui.employeeLink(r.e.id)}${r.e.isDemo ? ' <span class="badge badge-muted">demo</span>' : ''}` },
         { label: 'Torn ID', render: (r) => `<span class="mono">${esc(r.e.tornId)}</span>` },
-        { label: 'Position', render: (r) => esc(r.e.position) },
+        { label: 'Job now', render: (r) => esc(r.e.position) },
+        { label: 'Suggested job', render: (r) => suggestedCell(r.e, sugs) },
+        { label: 'Job fit', render: (r) => jobFitBadge(r.e, sugs) },
         { label: 'Salary/day', align: 'right', render: (r) => ui.money(r.salary) },
         { label: 'Start date', render: (r) => U.formatDate(r.e.startDate) },
         { label: 'Status', render: (r) => ui.statusBadge(r.e.status) },
@@ -77,8 +153,14 @@
         <select data-filter="position" aria-label="Filter by position">${ui.options(s.positions, filters.position, { placeholder: 'All positions' })}</select>
         <select data-filter="sort" aria-label="Sort">${ui.options(Object.entries(SORTS).map(([value, o]) => ({ value, label: o.label })), filters.sort)}</select>
       </div>
-      <div data-table></div>`;
+      <div data-table></div>
+      ${ui.panel('Best for each job', '<div data-best></div>', {
+        cls: 'panel-best',
+        actions: `<select data-best-job aria-label="Choose a job">${ui.options(J.JOBS.map((j) => j.name), bestFor.job)}</select>`,
+      })}`;
     el.querySelector('[data-add]').addEventListener('click', () => F.employeeForm());
+    el.querySelector('[data-best-job]').addEventListener('change', (ev) => { bestFor.job = ev.target.value; renderBestForJob(el); });
+    renderBestForJob(el);
     const tornBtn = el.querySelector('[data-torn]');
     if (tornBtn) tornBtn.addEventListener('click', () => F.tornImport());
     ui.bindFilters(el, filters, () => renderTable(el));
@@ -132,12 +214,14 @@
       <div class="grid-2">
         ${ui.panel('Details', `
           <dl class="details">
-            <dt>Position</dt><dd>${esc(e.position)}</dd>
+            <dt>Job now</dt><dd>${esc(e.position)}</dd>
+            <dt>Suggested job</dt><dd>${suggestedCell(e, suggestions())}</dd>
             <dt>Salary / day</dt><dd>${ui.money(salary)}</dd>
             <dt>Start date</dt><dd>${U.formatDate(e.startDate)}</dd>
             <dt>End date</dt><dd>${e.endDate ? U.formatDate(e.endDate) : '<span class="muted">—</span>'}</dd>
             ${e.reasonForLeaving ? `<dt>Reason for leaving</dt><dd>${esc(e.reasonForLeaving)}</dd>` : ''}
             <dt>Working stats</dt><dd class="pre">${e.workingStats ? esc(e.workingStats) : '<span class="muted">—</span>'}</dd>
+            <dt>Job fit</dt><dd>${jobFitDetails(e)}</dd>
             <dt>Notes</dt><dd class="pre">${e.notes ? esc(e.notes) : '<span class="muted">—</span>'}</dd>
           </dl>`)}
         ${ui.panel('Financial summary', `

@@ -373,6 +373,11 @@
       if (next.banner && !/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(next.banner)) v.add('banner', 'The banner must be a PNG, JPEG, WebP or GIF image.');
       else if (next.banner.length > MAX_BANNER_CHARS) v.add('banner', 'The banner image is too large (max 500 KB).');
     }
+    if ('jobLimits' in patch) {
+      const { limits, errors } = DMB.jobs.cleanLimits(patch.jobLimits);
+      for (const [job, msg] of Object.entries(errors)) v.add(job, msg); // field names are the job names
+      next.jobLimits = limits;
+    }
     if ('tornApiKey' in patch) {
       next.tornApiKey = str(patch.tornApiKey);
       if (next.tornApiKey && !DMB.torn.KEY_PATTERN.test(next.tornApiKey)) v.add('tornApiKey', 'A Torn API key is 16 letters and numbers.');
@@ -386,6 +391,7 @@
     if (JSON.stringify(next.expenseCategories) !== JSON.stringify(current.expenseCategories)) changes.push('expense categories');
     if (JSON.stringify(next.incomeCategories) !== JSON.stringify(current.incomeCategories)) changes.push('income categories');
     if (next.theme !== current.theme) changes.push('theme');
+    if (JSON.stringify(next.jobLimits) !== JSON.stringify(current.jobLimits)) changes.push('job limits');
     if ((next.banner || '') !== (current.banner || '')) changes.push(next.banner ? 'banner uploaded' : 'banner removed');
     // Never write the key itself into the activity log.
     if ((next.tornApiKey || '') !== (current.tornApiKey || '')) changes.push(next.tornApiKey ? 'Torn API key saved' : 'Torn API key removed');

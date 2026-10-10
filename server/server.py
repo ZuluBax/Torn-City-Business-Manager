@@ -14,7 +14,8 @@ this server is a small, careful document store:
   POST /api/replace  {data, activity, clearSecrets}         -> {"version": n}
   GET  /api/torn/company           -> Torn API reply, fetched here with the stored key
 
-Background thread: refreshes the Torn company snapshot every 15 minutes and writes a daily backup.
+Background thread: refreshes the Torn company snapshot and employees' working stats every
+15 minutes and writes a daily backup.
 """
 import argparse
 import json
@@ -27,7 +28,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -42,7 +43,13 @@ TORN_URL = "https://api.torn.com/company/?selections=profile,employees,detailed,
 TORN_REFRESH_SECONDS = 900  # also feeds the employees' "last active" timers, so hourly is too stale
 TORN_EVENTS_URL = "https://api.torn.com/user/?selections=events&comment=TornCompanyManager&key="
 TORN_EVENTS_SECONDS = 900  # Torn only returns the latest events, so poll often enough not to miss any
-BACKUPS_KEPT = 30
+# Torn's 100/min limit is shared by every key on the account, so other tools can use it up.
+# The window is one minute, so a single retry a minute later almost always gets through.
+RATE_LIMIT_RETRY_SECONDS = 60
+# Torn updates working stats once a day at 18:10 TCT (= UTC). One extra refresh a minute
+# later gets them on screen promptly instead of up to 15 minutes late.
+STATS_REFRESH_TCT = (18, 11)
+BACKUPS_KEPT = 5  # one per day, so this is days of history; each file is ~80 KB
 
 log = logging.getLogger("dukes")
 
@@ -195,6 +202,33 @@ class Store:
             self.db.execute("COMMIT")
             return len(rows)
 
+    def update_employee_stats(self, stats_by_torn_id: dict) -> int:
+        """Overwrite workingStats for employees matched by Torn ID; returns how many changed.
+        Only stats are touched: position, wage and joins/leaves still go through the import
+        review in the browser, because those affect money."""
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        with self.lock:
+            rows = []
+            for rid, raw in self.db.execute("SELECT id, json FROM records WHERE store='employees'"):
+                e = json.loads(raw)
+                stats = stats_by_torn_id.get(str(e.get("tornId", "")))
+                if e.get("isDemo") or e.get("status") == "left" or not stats or stats == e.get("workingStats"):
+                    continue
+                e["workingStats"], e["updatedAt"] = stats, now
+                rows.append((rid, json.dumps(e)))
+            if not rows:
+                return 0  # no version bump, so open pages aren't told to reload for nothing
+            self.db.execute("BEGIN IMMEDIATE")
+            try:
+                for rid, raw in rows:
+                    self.db.execute("UPDATE records SET json=? WHERE store='employees' AND id=?", (raw, rid))
+                self._bump({"employees"})
+                self.db.execute("COMMIT")
+            except Exception:
+                self.db.execute("ROLLBACK")
+                raise
+            return len(rows)
+
     def backup(self, folder: Path) -> Path:
         folder.mkdir(parents=True, exist_ok=True)
         target = folder / f"dukes-{date.today().isoformat()}.db"
@@ -265,6 +299,29 @@ def last_active_map(employees) -> dict:
     return out
 
 
+def _fmt_num(n) -> str:
+    """Mirror of formatNumber() in js/util.js (en-US grouping, "—" for non-numbers)."""
+    if isinstance(n, bool) or not isinstance(n, (int, float)) or n != n or n in (float("inf"), float("-inf")):
+        return "—"
+    return f"{int(n):,}" if n == int(n) else f"{n:,}"
+
+
+def stats_text(t: dict) -> str:
+    """Mirror of statsText() in js/torn.js — must produce identical text, or every refresh
+    would look like a change."""
+    return f"MAN {_fmt_num(t.get('manual_labor'))} / INT {_fmt_num(t.get('intelligence'))} / END {_fmt_num(t.get('endurance'))}"
+
+
+def stats_map(employees) -> dict:
+    """tornId -> stats text. Skips anyone Torn sent without stats rather than writing dashes."""
+    out = {}
+    for torn_id, t in (employees or {}).items():
+        if isinstance(t, dict) and all(isinstance(t.get(k), (int, float)) and not isinstance(t.get(k), bool)
+                                       for k in ("manual_labor", "intelligence", "endurance")):
+            out[str(torn_id)] = stats_text(t)
+    return out
+
+
 def snapshot_from_torn(data: dict) -> dict:
     """Mirror of companySnapshot() in js/torn.js — keep the two in step."""
     c, d = data["company"], data["company_detailed"]
@@ -280,43 +337,83 @@ def snapshot_from_torn(data: dict) -> dict:
     }
 
 
+def is_rate_limited(data=None, exc=None) -> bool:
+    """Torn's own "too many requests" (code 5), or a plain HTTP 429 from Cloudflare."""
+    if isinstance(exc, TornHTTPError):
+        return exc.status == 429
+    return isinstance(data, dict) and isinstance(data.get("error"), dict) and data["error"].get("code") == 5
+
+
+def next_due(now: float, interval: float, rate_limited: bool, retried: bool):
+    """-> (next attempt time, retried flag). Only one quick retry, so a busy account can't
+    turn this into a tight loop; after that it falls back to the normal interval."""
+    if rate_limited and not retried:
+        return now + RATE_LIMIT_RETRY_SECONDS, True
+    return now + interval, False
+
+
+def next_daily_utc(now: float, hour: int, minute: int) -> float:
+    """Epoch seconds of the next hour:minute UTC strictly after `now` (TCT is UTC)."""
+    t = datetime.fromtimestamp(now, timezone.utc).replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if t.timestamp() <= now:
+        t += timedelta(days=1)
+    return t.timestamp()
+
+
 def background_loop(store: Store, backup_dir: Path, stop: threading.Event):
-    last_torn = 0.0
-    last_events = 0.0
+    next_torn = next_events = 0.0
+    retried_torn = retried_events = False
+    next_stats = next_daily_utc(time.time(), *STATS_REFRESH_TCT)
     while not stop.is_set():
-        if time.time() - last_events >= TORN_EVENTS_SECONDS:
-            last_events = time.time()
+        if time.time() >= next_stats:
+            next_torn = 0.0  # pull the company refresh forward; the normal 15-min cycle resumes after it
+            next_stats = next_daily_utc(time.time(), *STATS_REFRESH_TCT)
+            log.info("Daily stats refresh (Torn updates stats at 18:10 TCT)")
+        if time.time() >= next_events:
+            limited = False
             key = store.torn_key()
             if key:
                 try:
                     data = json.loads(fetch_torn(key, TORN_EVENTS_URL))
                     if "error" in data:
+                        limited = is_rate_limited(data)
                         log.warning("Torn events: API error code %s", data["error"].get("code"))
                     else:
                         n = store.add_torn_events(data.get("events"))
                         if n:
                             log.info("Torn events: %d new money event(s) stored", n)
                 except Exception as e:
-                    log.warning("Torn events failed: %s", type(e).__name__)
+                    limited = is_rate_limited(exc=e)
+                    log.warning("Torn events failed: %s", e if isinstance(e, TornHTTPError) else type(e).__name__)
+            next_events, retried_events = next_due(time.time(), TORN_EVENTS_SECONDS, limited, retried_events)
+            if retried_events:
+                log.info("Torn events: rate limited, retrying in %ds", RATE_LIMIT_RETRY_SECONDS)
         try:
             if not (backup_dir / f"dukes-{date.today().isoformat()}.db").exists():
                 log.info("daily backup written: %s", store.backup(backup_dir).name)
         except Exception:
             log.exception("backup failed")
-        if time.time() - last_torn >= TORN_REFRESH_SECONDS:
-            last_torn = time.time()
+        if time.time() >= next_torn:
+            limited = False
             key = store.torn_key()
             if key:
                 try:
                     data = json.loads(fetch_torn(key))
                     if "error" in data:
+                        limited = is_rate_limited(data)
                         log.warning("Torn refresh: API error code %s", data["error"].get("code"))
                     else:
                         store.update_settings_fields({"tornCompany": snapshot_from_torn(data)})
-                        log.info("Torn company figures refreshed")
+                        changed = store.update_employee_stats(stats_map(data.get("company_employees")))
+                        log.info("Torn company figures refreshed%s", f"; stats updated for {changed} employee(s)" if changed else "")
                 except Exception as e:  # network blips are expected; try again next round
-                    log.warning("Torn refresh failed: %s", type(e).__name__)
-        stop.wait(300)
+                    limited = is_rate_limited(exc=e)
+                    log.warning("Torn refresh failed: %s", e if isinstance(e, TornHTTPError) else type(e).__name__)
+            next_torn, retried_torn = next_due(time.time(), TORN_REFRESH_SECONDS, limited, retried_torn)
+            if retried_torn:
+                log.info("Torn refresh: rate limited, retrying in %ds", RATE_LIMIT_RETRY_SECONDS)
+        # Wake for whichever is due first (a retry may be due in under 5 minutes).
+        stop.wait(max(1, min(300, min(next_torn, next_events, next_stats) - time.time())))
 
 
 def make_handler(store: Store, app_dir: Path):

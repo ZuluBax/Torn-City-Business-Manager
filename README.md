@@ -60,8 +60,8 @@ but that copy keeps its own separate browser data.
 | What | Detail |
 |---|---|
 | Server | `server/server.py`. Uses only Python's standard library, so nothing to install. Runs as the systemd service `dukes-music-box` (the internal name, kept for compatibility) as your SSH user, on port 8010. It starts on boot and restarts if it crashes. |
-| Backups | A copy is saved to `~/dukes-music-box/backups/dukes-YYYY-MM-DD.db` every day, and the last 30 are kept. |
-| Torn | The Pi holds the API key (browsers only see "a key is set"). It refreshes company funds, trains available and each employee's "last active" time every 15 minutes. |
+| Backups | A copy is saved to `~/dukes-music-box/backups/dukes-YYYY-MM-DD.db` every day, and the last 5 are kept (older ones are deleted automatically). |
+| Torn | The Pi holds the API key (browsers only see "a key is set"). It refreshes company funds, trains available, each employee's "last active" time and their working stats every 15 minutes, plus an extra refresh at 18:11 TCT because Torn updates stats daily at 18:10. Position, wage and joins/leaves still need the import button, because they affect money. If Torn says "too many requests", it retries once a minute later. |
 | Several devices | Other devices pick up changes within about 15 seconds. If two devices edit at once, the later save is refused and the page refreshes, so nothing is overwritten by accident. |
 | Security | Home network only, with no login. Anyone on your Wi-Fi can open it. **Don't port-forward it.** For access away from home, use Tailscale. |
 
@@ -215,6 +215,7 @@ css/styles.css        All styling. Colours are CSS variables; light theme via [d
 js/util.js            Dates, money formatting and parsing, escaping (pure, no DOM)
 js/torn.js            Torn API fetch + import plan (preview before saving)
 js/calc.js            ALL financial maths: ledger, salary, summaries (pure, unit-tested)
+js/jobs.js            Music Store job fit + suggestions: stats vs. each job's recommended stats (Torn wiki), job limits from Settings; the strongest person gets a limited job (pure, unit-tested)
 js/db.js              IndexedDB storage with an in-memory copy and atomic multi-record saves
 js/services.js        Business rules: validation, data rules, activity log. The only writer.
 js/ui.js              Shared UI pieces: modal, confirm, toast, tables, badges, icons, filters
@@ -223,6 +224,7 @@ js/backup.js          Export, import (with validation and migration hook), demo 
 js/views/*.js         One file per page
 js/app.js             Start-up, hash router (#/employees/<id>), re-draws when data changes
 tests/calc.test.js    Node unit tests for calc.js and util.js
+tests/jobs.test.js    Node unit tests for jobs.js
 backups/              Somewhere to keep exported backup files
 ```
 

@@ -72,3 +72,13 @@ test('snapshot keeps each employee\'s last action time, skipping missing or bad 
   const snap = T.companySnapshot(data, '2026-10-06T12:00:00Z');
   assert.deepEqual(snap.lastActive, { 111: { at: 1759700000000, status: 'Idle' } });
 });
+
+test('fetchEvents explains a Cloudflare 429 instead of failing to parse HTML', async () => {
+  const realFetch = global.fetch;
+  global.fetch = async () => ({ status: 429, ok: false, json: async () => { throw new SyntaxError('Unexpected token <'); } });
+  try {
+    await assert.rejects(T.fetchEvents('A'.repeat(16)), /Too many requests/);
+  } finally {
+    global.fetch = realFetch;
+  }
+});

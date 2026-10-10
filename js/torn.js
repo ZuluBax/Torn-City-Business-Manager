@@ -53,6 +53,7 @@
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || 'The Pi could not get data from Torn.');
     }
+    if (res.status === 429) throw new Error(ERROR_HELP[5]);
     if (!res.ok) throw new Error(`Torn returned an error (HTTP ${res.status}). Try again later.`);
     let data;
     try { data = await res.json(); } catch (e) { throw new Error('Torn sent back something unexpected.'); }
@@ -169,7 +170,11 @@
   async function fetchEvents(key) {
     if (!KEY_PATTERN.test(key || '')) throw new Error('No Torn API key saved.');
     const res = await fetch(EVENTS_URL + encodeURIComponent(key), { cache: 'no-store' });
-    const data = await res.json();
+    // Cloudflare answers with an HTML page, not JSON, so check the status before parsing.
+    if (res.status === 429) throw new Error(ERROR_HELP[5]);
+    if (!res.ok) throw new Error(`Torn returned an error (HTTP ${res.status}). Try again later.`);
+    let data;
+    try { data = await res.json(); } catch (e) { throw new Error('Torn sent back something unexpected.'); }
     if (data.error) throw new Error(ERROR_HELP[data.error.code] || `Torn error: ${data.error.error}`);
     return data.events || {};
   }

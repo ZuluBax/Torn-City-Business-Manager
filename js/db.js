@@ -31,6 +31,7 @@
     tornCompany: null,       // last company snapshot from the Torn API (funds, trains available…)
     tornLastSync: null,
     tornSetupImported: false, // the one-off "setup spend" expense has been imported
+    jobLimits: { ...DMB.jobs.DEFAULT_LIMITS }, // most people per job, for job suggestions (js/jobs.js)
   };
 
   let db = null;
