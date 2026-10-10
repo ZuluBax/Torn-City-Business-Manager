@@ -173,6 +173,52 @@ changes the format, `migrate()` in `js/backup.js` upgrades old backups before im
 
 ---
 
+## Job fit and job suggestions (Music Store)
+
+Each employee's working stats (MAN / INT / END) are compared with the **recommended stats**
+for each Music Store job, taken from the [Torn wiki](https://wiki.torn.com/wiki/Music_Store).
+Staff below the recommended stats can still work; they're just less efficient.
+
+| Job | Needs | Main stat |
+|---|---|---|
+| Sales Apprentice | END 1,000 · INT 500 | END |
+| Cleaner | MAN 2,000 · END 1,000 | MAN |
+| Sales Assistant | END 3,500 · INT 1,750 | END |
+| Bookkeeper | END 5,500 · INT 2,750 | END |
+| Supervisor | END 7,000 · INT 3,500 | END |
+| Musician | INT 9,000 · MAN 4,500 | INT |
+| Trainer | INT 10,500 · END 5,250 | INT |
+
+**Where you see it (Employees page):**
+- **Job now** and **Suggested job** columns. The suggestion is **bold** when it differs from
+  the job they have now.
+- **Job fit** badge: *Right job*, *Move to X*, *Below stats · Suggest X*, or *No open job fits*.
+  Hover over it to see why, for example "Cleaner goes to Strongest1".
+- **Best for each job** panel (under the staff table): pick a job to see everyone who meets
+  it, ranked by the main stat, then the second stat.
+- Each profile shows the same details, including how far short they are and roughly how many
+  trains it will take to catch up.
+
+**Job limits (Settings → Job limits):** the most people you want in each job. Cleaner,
+Bookkeeper, Supervisor and Trainer start at **1**. Leave a box empty for no limit, or use
+**0** to never suggest that job. Torn itself doesn't cap these; it's your own rule.
+
+**How suggestions are picked:**
+1. Jobs are filled hardest first (Trainer down to Sales Apprentice).
+2. A job with a limit goes to the **strongest** people who meet it, even if someone else holds
+   it today. Everyone else who meets it drops to their next-best job.
+3. A job with no limit takes everyone left who meets it.
+4. So each person is suggested the hardest job they meet that still has room.
+
+Staff who have left, and anyone without working stats, get no suggestion. Suggestions are
+advice only: the app never changes anyone's position for you. On the Pi, working stats
+refresh by themselves every 15 minutes and just after Torn's daily update (18:10 TCT).
+
+If Torn changes the job table, update `JOBS` in `js/jobs.js`. Nothing else hard-codes these
+numbers.
+
+---
+
 ## Features (Version 1)
 
 - **Dashboard:** 8 summary cards, financial and training summaries, who owes money (with a
@@ -180,7 +226,8 @@ changes the format, `migrate()` in `js/backup.js` upgrades old backups before im
 - **Employees:** add, edit, search (by name or Torn ID), filter by status or position, and
   sort by name, salary, start date or amount owed. Duplicate Torn IDs are blocked. Mark
   someone as *Left* (history is kept) or re-activate them. You can only permanently delete
-  an employee who has no history.
+  an employee who has no history. Job fit, suggested job and a "Best for each job" ranking
+  (see "Job fit and job suggestions").
 - **Employee profile:** details, money summary, net value to the company, and history of
   training, payments and salary changes. Quick actions are on the profile too.
 - **Training:** summary cards, a record form with a live total, upfront payment, filters
@@ -195,7 +242,7 @@ changes the format, `migrate()` in `js/backup.js` upgrades old backups before im
   profit by month and employee training. Filter by date, employee or category, then
   **export to CSV** or **print**.
 - **Settings:** company name, currency, default train price, positions, expense and income
-  categories, a dark or light theme, backup and restore, demo data, and reset.
+  categories, job limits, a dark or light theme, backup and restore, demo data, and reset.
 - **Other:** clear error messages next to each form field (no pop-up alerts), and safe
   confirmation dialogs before anything destructive. Money can be typed in Torn shorthand
   (`420k`, `1.5m`). It works on desktop, tablet and phone (the menu collapses and wide
@@ -215,7 +262,7 @@ css/styles.css        All styling. Colours are CSS variables; light theme via [d
 js/util.js            Dates, money formatting and parsing, escaping (pure, no DOM)
 js/torn.js            Torn API fetch + import plan (preview before saving)
 js/calc.js            ALL financial maths: ledger, salary, summaries (pure, unit-tested)
-js/jobs.js            Music Store job fit + suggestions: stats vs. each job's recommended stats (Torn wiki), job limits from Settings; the strongest person gets a limited job (pure, unit-tested)
+js/jobs.js            Music Store job table, job fit, ranking and suggestions with job limits (pure, unit-tested)
 js/db.js              IndexedDB storage with an in-memory copy and atomic multi-record saves
 js/services.js        Business rules: validation, data rules, activity log. The only writer.
 js/ui.js              Shared UI pieces: modal, confirm, toast, tables, badges, icons, filters
@@ -250,7 +297,7 @@ other by **id**, never by name. Demo records also have `isDemo: true`.
 | `payments` | `employeeId, trainingId (optional), date, amount, paymentType (train/other/refund), notes` |
 | `expenses` | `date, category, description, amount, notes` |
 | `income` | `date, category, description, amount, notes` |
-| `settings` | One record (`key: 'app'`): `companyName, currency, trainPrice, positions[], expenseCategories[], incomeCategories[], theme` |
+| `settings` | One record (`key: 'app'`): `companyName, currency, trainPrice, positions[], expenseCategories[], incomeCategories[], theme, jobLimits{jobName: maxPeople}` (a job missing from `jobLimits` has no limit) |
 | `activity` | `at, type, message`. Only the newest 300 are kept. |
 
 A note on two choices that differ from the original spec:
@@ -269,6 +316,8 @@ A note on two choices that differ from the original spec:
   estimate counts the time they were away. Edit their start date if that matters.
 - Statuses are fixed (Active, Inactive, Left) because the maths depends on them.
 - Salary is an estimate, not actual Torn payouts.
+- Job suggestions only know the Music Store's jobs. Other company types still work, but
+  they get no job fit or suggestions.
 - Data is saved per browser and per address (see "Running it").
 
 ## Ideas for Version 2
