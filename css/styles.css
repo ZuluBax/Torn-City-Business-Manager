@@ -221,6 +221,8 @@ code { font-family: var(--mono); font-size: 0.9em; background: var(--surface-3);
 .stat-card.tone-gold .stat-value { color: var(--gold-2); }
 .stat-card.tone-red .stat-icon { background: var(--red-soft); color: var(--red); }
 .stat-card.tone-red .stat-value { color: var(--red); }
+.stat-card.tone-amber .stat-icon { background: var(--amber-soft); color: var(--amber); }
+.stat-card.tone-amber .stat-value { color: var(--amber); }
 .stat-card.tone-green .stat-icon { background: var(--green-soft); color: var(--green); }
 
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 18px; min-width: 0; }

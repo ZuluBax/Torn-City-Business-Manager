@@ -66,6 +66,10 @@
       if (!U.isISODate(t.date) || !Number.isInteger(t.trainCount) || t.trainCount < 1 || !isMoney(t.pricePerTrain) || !C.TRAIN_TYPES[t.trainType]) {
         throw new Error(`Training record ${t.id} has invalid values.`);
       }
+      // Optional: older backups have no trainsGiven and count as fully given.
+      if (t.trainsGiven !== undefined && !(Number.isInteger(t.trainsGiven) && t.trainsGiven >= 0 && t.trainsGiven <= t.trainCount)) {
+        throw new Error(`Training record ${t.id} has an invalid number of trains given.`);
+      }
     }
     for (const p of d.payments) {
       if (!empIds.has(p.employeeId)) throw new Error(`A payment (${p.id}) points to a missing employee.`);

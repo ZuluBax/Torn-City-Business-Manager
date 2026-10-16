@@ -46,7 +46,7 @@
       const count = DMB.torn.trainCountFrom(e.message) || 1;
       const each = e.amount / count;
       F.trainingForm(null, {
-        employeeId: e.employeeId, date: U.toISODate(new Date(e.at)), trainCount: count,
+        employeeId: e.employeeId, date: U.toISODate(new Date(e.at)), trainCount: count, trainsGiven: 0,
         pricePerTrain: Number.isInteger(each) ? each : db.settings().trainPrice, paidInFull: true,
         notes: `From Torn: "${e.message || ''}"`,
         onSaved: () => S.resolveTornEvent(e.id, 'Recorded manually (training + payment)'),

@@ -206,7 +206,7 @@
 
       <div class="stat-grid">
         ${ui.statCard({ label: 'Outstanding balance', value: ui.money(st.outstanding), tone: st.outstanding ? 'red' : 'green', iconName: 'alert', sub: st.lastPaymentDate ? `Last payment ${U.formatDate(st.lastPaymentDate)}` : 'No payments yet' })}
-        ${ui.statCard({ label: 'Trains received', value: U.formatNumber(st.trainsReceived), iconName: 'train', sub: `${st.paidTrains} paid · ${st.unpaidTrains} unpaid · ${st.freeTrains} free` })}
+        ${ui.statCard({ label: 'Trains received', value: U.formatNumber(st.trainsReceived), iconName: 'train', sub: `${st.paidTrains} paid · ${st.unpaidTrains} unpaid · ${st.freeTrains} free${st.trainsWaiting ? ` · <span class="text-amber">${st.trainsWaiting} still to give</span>` : ''}` })}
         ${ui.statCard({ label: 'Spent on trains', value: ui.money(st.charged), iconName: 'tag', sub: `${ui.money(st.paid)} paid so far` })}
         ${ui.statCard({ label: 'Salary paid (est.)', value: ui.money(st.salaryCost), iconName: 'wallet', sub: `${U.formatNumber(st.daysEmployed)} day${st.daysEmployed === 1 ? '' : 's'} at up to ${ui.money(salary)}/day` })}
       </div>

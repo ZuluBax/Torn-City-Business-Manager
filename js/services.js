@@ -181,6 +181,11 @@
     else if (trainCount > 1000) v.add('trainCount', 'Train count looks too high — check the number.');
     if (!C.TRAIN_TYPES[trainType]) v.add('trainType', 'Choose a train type.');
     const pricePerTrain = requireMoney(v, 'pricePerTrain', input.pricePerTrain, 'Price per train');
+    // Blank means "all given", matching how records worked before delivery was tracked.
+    const givenRaw = str(input.trainsGiven);
+    const trainsGiven = givenRaw === '' ? trainCount : Number(givenRaw);
+    if (!Number.isInteger(trainsGiven) || trainsGiven < 0) v.add('trainsGiven', 'Trains given must be a whole number, 0 or more.');
+    else if (Number.isInteger(trainCount) && trainsGiven > trainCount) v.add('trainsGiven', `Trains given can't be more than the ${trainCount} train${trainCount === 1 ? '' : 's'} on this record.`);
     limitText(v, 'notes', notes, 'Notes');
 
     // New records can take an upfront payment, which becomes a separate linked payment record.
@@ -197,7 +202,7 @@
 
     const rec = {
       ...(existing || { id: U.uid(), createdAt: now() }),
-      employeeId, date, trainCount, trainType, pricePerTrain, notes,
+      employeeId, date, trainCount, trainsGiven, trainType, pricePerTrain, notes,
       totalAmount: trainCount * pricePerTrain, // snapshot for exports; calc.js always recomputes
       updatedAt: now(),
     };
@@ -225,11 +230,20 @@
     }
 
     const name = employeeName(employeeId);
-    const what = `${trainCount} ${C.TRAIN_TYPES[trainType].toLowerCase()}${trainCount === 1 ? '' : 's'}`;
+    const what = `${trainCount} ${C.TRAIN_TYPES[trainType].toLowerCase()}${trainCount === 1 ? '' : 's'}${trainsGiven < trainCount ? ` (${trainsGiven} given)` : ''}`;
     const activity = existing
       ? { type: 'training_updated', message: `Training updated: ${name}, ${what}${followed ? `; linked payment ${money(followed.amount)} → ${money(rec.totalAmount)}` : ''}` }
       : { type: 'training_recorded', message: `Training recorded: ${name}, ${what} (${money(rec.totalAmount)})${upfront ? `, ${money(upfront)} paid` : ''}` };
     await db.commit(ops, activity);
+    return rec;
+  }
+
+  async function markTrainsGiven(id) {
+    const t = db.get('training', id);
+    if (!t) throw new ValidationError({ _form: 'That training record no longer exists.' });
+    if (C.trainsWaiting(t) === 0) return t;
+    const rec = { ...t, trainsGiven: t.trainCount, updatedAt: now() };
+    await db.commit([{ store: 'training', put: rec }], { type: 'training_given', message: `Trains given: ${employeeName(t.employeeId)}, ${C.trainsWaiting(t)} train(s) from ${U.formatDate(t.date)}` });
     return rec;
   }
 
@@ -506,7 +520,8 @@
             if (c.action === 'trainAndPay') {
               training = {
                 id: U.uid(), createdAt: now(), updatedAt: now(), employeeId: c.employeeId, date,
-                trainCount: c.count, trainType: 'paid', pricePerTrain: c.price, totalAmount: c.count * c.price,
+                // The money arrives first; the director gives the trains in Torn afterwards.
+                trainCount: c.count, trainsGiven: 0, trainType: 'paid', pricePerTrain: c.price, totalAmount: c.count * c.price,
                 notes: 'Recorded automatically from a Torn payment.',
               };
               ops.push({ store: 'training', put: training });
@@ -567,7 +582,7 @@
     applyTornImport,
     ValidationError,
     saveEmployee, setEmployeeStatus, deleteEmployee, employeeHasRecords,
-    saveTraining, deleteTraining,
+    saveTraining, markTrainsGiven, deleteTraining,
     savePayment, deletePayment,
     saveExpense: makeLedgerEntrySaver('expenses', 'expense'),
     deleteExpense: makeLedgerEntryDeleter('expenses', 'expense'),

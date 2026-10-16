@@ -26,6 +26,22 @@
 
   function chargeOf(t) { return t.trainCount * t.pricePerTrain; }
 
+  // Delivery is tracked apart from payment: staff often pay before the director gives the
+  // trains in Torn. Records saved before this field existed count as fully given.
+  function trainsGiven(t) {
+    return Number.isInteger(t.trainsGiven) ? Math.min(Math.max(t.trainsGiven, 0), t.trainCount) : t.trainCount;
+  }
+  function trainsWaiting(t) { return t.trainCount - trainsGiven(t); }
+
+  function trainsOwed(data) {
+    const byEmployee = new Map();
+    for (const t of data.training) {
+      const w = trainsWaiting(t);
+      if (w > 0) byEmployee.set(t.employeeId, (byEmployee.get(t.employeeId) || 0) + w);
+    }
+    return { trains: U.sum([...byEmployee.values()], (n) => n), employees: byEmployee.size, byEmployee };
+  }
+
   // Only train payments and refunds touch a training balance. "Other" payments are income
   // unrelated to training and are reported separately.
   function signedTrainAmount(p) {
@@ -286,6 +302,7 @@
     const salary = salaryCost(emp, null, today);
     return {
       trainsReceived: U.sum(trainings, (t) => t.trainCount),
+      trainsWaiting: U.sum(trainings, trainsWaiting),
       paidTrains, unpaidTrains, freeTrains, lastTrainDate,
       charged: ledger.charged,
       paid: ledger.paid,
@@ -301,7 +318,7 @@
 
   return {
     TRAIN_TYPES, PAYMENT_TYPES, STATUSES, PAY_STATUS,
-    defaultPriceFor, chargeOf, signedTrainAmount, buildLedger, ledgerForEmployee, allLedgers,
+    defaultPriceFor, chargeOf, trainsGiven, trainsWaiting, trainsOwed, signedTrainAmount, buildLedger, ledgerForEmployee, allLedgers,
     describeLedgerError, paidInFullPayment, sortedSalaryHistory, currentSalary, employmentEnd, isCurrentStaff,
     daysEmployed, salaryCost, dailySalaryBill, trainingSummary, financeSummary, monthlyFinance,
     employeeStats,

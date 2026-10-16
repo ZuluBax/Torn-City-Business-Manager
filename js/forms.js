@@ -72,12 +72,14 @@
 
   // ---------- Training ----------
 
-  function trainingForm(id, { employeeId, date, trainCount, pricePerTrain, paidInFull, notes, onSaved } = {}) {
+  function trainingForm(id, { employeeId, date, trainCount, trainsGiven, pricePerTrain, paidInFull, notes, onSaved } = {}) {
     const t = id ? db.get('training', id) : null;
     const s = db.settings();
     const type = t ? t.trainType : 'paid';
     const price = t ? t.pricePerTrain : (Number.isInteger(pricePerTrain) ? pricePerTrain : C.defaultPriceFor(type, s.trainPrice));
     const empId = t ? t.employeeId : (employeeId || '');
+    const count = t ? t.trainCount : (trainCount || 1);
+    const given = t ? C.trainsGiven(t) : (Number.isInteger(trainsGiven) ? trainsGiven : count);
 
     const paymentSection = t ? '' : `
       <fieldset class="field field-full pay-now">
@@ -94,7 +96,8 @@
     const body = formShell('training-form', `
       ${ui.field({ label: 'Employee', name: 'employeeId', type: 'select', required: true, options: ui.employeeOptions(empId), attrs: t ? '' : 'autofocus' })}
       ${ui.field({ label: 'Date', name: 'date', type: 'date', value: t ? t.date : (date || U.todayISO()), required: true })}
-      ${ui.field({ label: 'Number of trains', name: 'trainCount', type: 'number', value: t ? t.trainCount : (trainCount || 1), required: true, attrs: 'min="1" max="1000" step="1"' })}
+      ${ui.field({ label: 'Number of trains', name: 'trainCount', type: 'number', value: count, required: true, attrs: 'min="1" max="1000" step="1"' })}
+      ${ui.field({ label: 'Trains given so far', name: 'trainsGiven', type: 'number', value: given, required: true, hint: 'Lower this if they paid but you haven\'t given all the trains in Torn yet.', attrs: `min="0" max="${count}" step="1"` })}
       ${ui.field({ label: 'Train type', name: 'trainType', type: 'select', required: true, options: ui.mapOptions(C.TRAIN_TYPES, type) })}
       ${ui.field({ label: `Price per train (${s.currency})`, name: 'pricePerTrain', value: moneyInputValue(price), required: true, hint: `Default is ${ui.money(s.trainPrice)} (change it in Settings). Free & director trains default to ${ui.money(0)}.`, attrs: 'inputmode="numeric" autocomplete="off"' })}
       <div class="field total-box"><span class="total-label">Total amount</span><span class="total-value" data-total>—</span><span class="field-hint" data-owes></span></div>
@@ -128,6 +131,14 @@
         f.trainType.addEventListener('change', () => {
           f.pricePerTrain.value = String(C.defaultPriceFor(f.trainType.value, db.settings().trainPrice));
           update();
+        });
+        // While "given" equals the count (all given), keep it following the count so the
+        // common case needs no extra typing; once the user lowers it, leave it alone.
+        let lastCount = Number(f.trainCount.value);
+        f.trainCount.addEventListener('input', () => {
+          const n = Number(f.trainCount.value);
+          if (Number(f.trainsGiven.value) === lastCount && Number.isInteger(n) && n > 0) f.trainsGiven.value = String(n);
+          if (Number.isInteger(n) && n > 0) { f.trainsGiven.max = String(n); lastCount = n; }
         });
         ['trainCount', 'pricePerTrain', 'employeeId'].forEach((n) => f[n].addEventListener('input', update));
         form.querySelectorAll('[name=paymentNow]').forEach((r) => r.addEventListener('change', update));

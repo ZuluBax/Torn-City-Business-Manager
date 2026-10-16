@@ -3,7 +3,8 @@
   const U = DMB.util, C = DMB.calc, db = DMB.db, ui = DMB.ui, F = DMB.forms;
   const esc = U.escapeHtml;
 
-  const filters = { q: '', preset: 'all', from: '', to: '', payStatus: '', trainType: '' };
+  const filters = { q: '', preset: 'all', from: '', to: '', payStatus: '', trainType: '', given: '' };
+  const GIVEN_FILTERS = { '': 'Given or waiting', waiting: 'Waiting for trains', given: 'All given' };
   const PAY_FILTERS = { '': 'Any payment status', owing: 'Unpaid or partial', unpaid: 'Unpaid', partial: 'Partial', paid: 'Paid', free: 'Free' };
 
   function filtered(data, ledgers) {
@@ -12,6 +13,8 @@
     return data.training.filter((t) => {
       if (!U.inRange(t.date, range)) return false;
       if (filters.trainType && t.trainType !== filters.trainType) return false;
+      if (filters.given === 'waiting' && C.trainsWaiting(t) === 0) return false;
+      if (filters.given === 'given' && C.trainsWaiting(t) > 0) return false;
       const row = ledgers.rows.get(t.id);
       if (filters.payStatus === 'owing' && !(row.status === 'unpaid' || row.status === 'partial')) return false;
       if (filters.payStatus && filters.payStatus !== 'owing' && row.status !== filters.payStatus) return false;
@@ -21,6 +24,13 @@
       }
       return true;
     }).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (a.createdAt < b.createdAt ? 1 : -1)));
+  }
+
+  function givenCell(t) {
+    const w = C.trainsWaiting(t);
+    return w
+      ? `<span class="badge badge-amber" title="${w} still to give in Torn">${C.trainsGiven(t)} / ${t.trainCount}</span>`
+      : '<span class="badge badge-green">All given</span>';
   }
 
   function renderBody(el) {
@@ -57,6 +67,7 @@
         { label: 'Date', render: (t) => U.formatDate(t.date) },
         { label: 'Employee', render: (t) => ui.employeeLink(t.employeeId) },
         { label: 'Trains', align: 'right', render: (t) => t.trainCount },
+        { label: 'Given', render: givenCell },
         { label: 'Type', render: (t) => ui.trainTypeBadge(t.trainType) },
         { label: 'Price/train', align: 'right', render: (t) => ui.money(t.pricePerTrain) },
         { label: 'Total', align: 'right', render: (t) => ui.money(ledgers.rows.get(t.id).charge) },
@@ -65,13 +76,15 @@
         { label: 'Status', render: (t) => ui.payStatusBadge(ledgers.rows.get(t.id).status) },
         { label: 'Notes', cls: 'notes', render: (t) => esc(t.notes) },
         { label: '', cls: 'actions', render: (t) => `
+          ${C.trainsWaiting(t) ? `<button type="button" class="icon-btn" data-given="${esc(t.id)}" title="Mark all trains given" aria-label="Mark all trains given">${ui.icon('check')}</button>` : ''}
           ${ledgers.rows.get(t.id).outstanding ? `<button type="button" class="icon-btn" data-pay="${esc(t.id)}" title="Record payment" aria-label="Record payment">${ui.icon('cash')}</button>` : ''}
           <button type="button" class="icon-btn" data-edit="${esc(t.id)}" title="Edit" aria-label="Edit">${ui.icon('edit')}</button>
           <button type="button" class="icon-btn icon-danger" data-del="${esc(t.id)}" title="Delete" aria-label="Delete">${ui.icon('trash')}</button>` },
       ],
-      footer: ['Totals', '', U.formatNumber(totals.trains), '', '', ui.money(totals.charge), ui.money(totals.paid), ui.money(totals.out), '', '', ''],
+      footer: ['Totals', '', U.formatNumber(totals.trains), '', '', '', ui.money(totals.charge), ui.money(totals.paid), ui.money(totals.out), '', '', ''],
     });
     target.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => F.trainingForm(b.dataset.edit)));
+    target.querySelectorAll('[data-given]').forEach((b) => b.addEventListener('click', () => ui.runAction(() => DMB.services.markTrainsGiven(b.dataset.given), 'Marked as given')));
     target.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => F.confirmDeleteTraining(b.dataset.del)));
     target.querySelectorAll('[data-pay]').forEach((b) => {
       const t = db.get('training', b.dataset.pay);
@@ -90,6 +103,7 @@
         <label class="search"><span class="sr-only">Search employee</span>${ui.icon('search')}<input type="search" data-filter="q" placeholder="Search employee…" value="${esc(filters.q)}"></label>
         ${ui.dateRangeControls(filters, 'tr')}
         <select data-filter="payStatus" aria-label="Payment status">${ui.mapOptions(PAY_FILTERS, filters.payStatus)}</select>
+        <select data-filter="given" aria-label="Trains given">${ui.mapOptions(GIVEN_FILTERS, filters.given)}</select>
         <select data-filter="trainType" aria-label="Train type">${ui.mapOptions(C.TRAIN_TYPES, filters.trainType, { placeholder: 'All train types' })}</select>
       </div>
       <div data-table></div>`;

@@ -5,7 +5,7 @@
 
   const ACTIVITY_ICONS = {
     employee_added: 'users', employee_updated: 'edit', employee_left: 'userOff', employee_removed: 'trash',
-    salary_changed: 'wallet', training_recorded: 'train', training_updated: 'train', training_deleted: 'trash',
+    salary_changed: 'wallet', training_recorded: 'train', training_updated: 'train', training_given: 'check', training_deleted: 'trash',
     payment_recorded: 'cash', payment_updated: 'cash', payment_deleted: 'trash', settings_changed: 'settings',
   };
 
@@ -49,7 +49,9 @@
         </div>
       </section>` : '';
 
-    const reviewCount = db.all('tornEvents').filter((e) => e.status === 'review').length;
+    const owed = C.trainsOwed(data);
+
+    const reviewCount =db.all('tornEvents').filter((e) => e.status === 'review').length;
     const reviewAlert = reviewCount
       ? `<div class="review-alert" role="status">${ui.icon('alert')}<span>${reviewCount} Torn payment${reviewCount === 1 ? '' : 's'} need${reviewCount === 1 ? 's' : ''} checking</span><a href="#/payments" class="link-sm">Check now →</a></div>`
       : '';
@@ -64,6 +66,7 @@
       outstanding: { label: 'Outstanding payments', html: ui.statCard({ label: 'Outstanding payments', value: ui.money(totalOutstanding), iconName: 'alert', tone: totalOutstanding ? 'red' : 'green', sub: `${owing.length} employee${owing.length === 1 ? '' : 's'} owe money` }) },
       totalSalary: { label: 'Total salary cost', html: ui.statCard({ label: 'Total salary cost', value: ui.money(fin.salaries), iconName: 'wallet', sub: 'All time, estimated' }) },
       netProfit: { label: 'Net profit', html: ui.statCard({ label: 'Net profit', value: ui.money(fin.netProfit), iconName: 'chart', tone: fin.netProfit < 0 ? 'red' : 'green', sub: 'All time' }) },
+      trainsOwed: { label: 'Trains to give', html: ui.statCard({ label: 'Trains to give', value: U.formatNumber(owed.trains), iconName: 'train', tone: owed.trains ? 'amber' : 'green', sub: owed.trains ? `<a href="#/training">${owed.employees} employee${owed.employees === 1 ? '' : 's'} waiting</a>` : 'Everyone has their trains' }) },
       trainPrice: { label: 'Current train price', html: ui.statCard({ label: 'Current train price', value: ui.money(s.trainPrice), iconName: 'tag', sub: '<a href="#/settings">Change in Settings</a>' }) },
     };
 

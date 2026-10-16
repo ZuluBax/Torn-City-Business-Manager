@@ -151,3 +151,16 @@ test('removing a record and its linked payments leaves other records balanced', 
   assert.equal(C.buildLedger([t1], [pay('p2', '2026-01-03', 200)]).errors[0].code, 'overpayment');
   assert.equal(C.buildLedger([t1, t2], [linked]).errors.length, 0);
 });
+
+test('trains given: old records count as given, waiting is tracked separately from payment', () => {
+  const old = train('t1', '2026-01-01', 5, 400000);
+  assert.equal(C.trainsGiven(old), 5);
+  assert.equal(C.trainsWaiting(old), 0);
+  const prepaid = train('t2', '2026-01-02', 5, 400000, { trainsGiven: 0 });
+  const L = C.buildLedger([prepaid], [pay('p1', '2026-01-02', 2000000, { trainingId: 't2' })]);
+  assert.equal(L.rows.get('t2').status, 'paid');
+  assert.equal(C.trainsWaiting(prepaid), 5);
+  const owed = C.trainsOwed({ training: [old, prepaid, train('t3', '2026-01-03', 3, 1, { employeeId: 'e2', trainsGiven: 1 })] });
+  assert.deepEqual([owed.trains, owed.employees], [7, 2]);
+  assert.equal(C.trainsGiven(train('t4', '2026-01-04', 2, 1, { trainsGiven: 9 })), 2, 'clamped to the record');
+});
