@@ -203,6 +203,12 @@
     };
     const ops = [{ store: 'training', put: rec }];
     let payments = db.all('payments');
+    const followed = existing ? C.paidInFullPayment(existing, rec.totalAmount, payments) : null;
+    if (followed) {
+      const p = { ...followed, amount: rec.totalAmount, updatedAt: now() };
+      ops.push({ store: 'payments', put: p });
+      payments = replaceById(payments, p);
+    }
     if (upfront > 0) {
       const p = { id: U.uid(), employeeId, trainingId: rec.id, date, amount: upfront, paymentType: 'train', notes: 'Paid when training was recorded', createdAt: now() };
       ops.push({ store: 'payments', put: p });
@@ -221,7 +227,7 @@
     const name = employeeName(employeeId);
     const what = `${trainCount} ${C.TRAIN_TYPES[trainType].toLowerCase()}${trainCount === 1 ? '' : 's'}`;
     const activity = existing
-      ? { type: 'training_updated', message: `Training updated: ${name}, ${what}` }
+      ? { type: 'training_updated', message: `Training updated: ${name}, ${what}${followed ? `; linked payment ${money(followed.amount)} → ${money(rec.totalAmount)}` : ''}` }
       : { type: 'training_recorded', message: `Training recorded: ${name}, ${what} (${money(rec.totalAmount)})${upfront ? `, ${money(upfront)} paid` : ''}` };
     await db.commit(ops, activity);
     return rec;

@@ -131,6 +131,18 @@
     }
   }
 
+  // When a fully paid record's total is edited, its single linked payment should follow the
+  // new total, otherwise lowering a price makes the record "overpaid". Only the unambiguous
+  // case qualifies: exactly one linked payment, a train payment equal to the old total, and
+  // a new total above zero (a $0 payment isn't allowed, so the user must remove it instead).
+  function paidInFullPayment(oldTraining, newTotal, payments) {
+    if (newTotal <= 0 || newTotal === chargeOf(oldTraining)) return null;
+    const linked = payments.filter((p) => p.trainingId === oldTraining.id);
+    if (linked.length !== 1) return null;
+    const p = linked[0];
+    return p.paymentType === 'train' && p.amount === chargeOf(oldTraining) ? p : null;
+  }
+
   // ---------- Salary ----------
   // salaryHistory: [{effectiveFrom: 'YYYY-MM-DD', salaryPerDay}] — a new entry is added when
   // pay changes, so past salary cost keeps using the rate that applied at the time.
@@ -290,7 +302,7 @@
   return {
     TRAIN_TYPES, PAYMENT_TYPES, STATUSES, PAY_STATUS,
     defaultPriceFor, chargeOf, signedTrainAmount, buildLedger, ledgerForEmployee, allLedgers,
-    describeLedgerError, sortedSalaryHistory, currentSalary, employmentEnd, isCurrentStaff,
+    describeLedgerError, paidInFullPayment, sortedSalaryHistory, currentSalary, employmentEnd, isCurrentStaff,
     daysEmployed, salaryCost, dailySalaryBill, trainingSummary, financeSummary, monthlyFinance,
     employeeStats,
   };

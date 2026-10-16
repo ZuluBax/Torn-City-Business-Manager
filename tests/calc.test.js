@@ -124,3 +124,21 @@ test('formatElapsed gives compact activity timer text', () => {
   assert.equal(U.formatElapsed(-1), '—');
   assert.equal(U.formatElapsed(NaN), '—');
 });
+
+test('paidInFullPayment: the single full payment follows an edited total', () => {
+  const t = train('t1', '2026-01-01', 5, 420000);
+  const p = pay('p1', '2026-01-01', 2100000, { trainingId: 't1' });
+  assert.equal(C.paidInFullPayment(t, 2000000, [p]), p);
+  const edited = { ...t, pricePerTrain: 400000 };
+  assert.equal(C.buildLedger([edited], [{ ...p, amount: 2000000 }]).errors.length, 0);
+});
+
+test('paidInFullPayment: leaves ambiguous or partial payments alone', () => {
+  const t = train('t1', '2026-01-01', 5, 420000);
+  const full = pay('p1', '2026-01-01', 2100000, { trainingId: 't1' });
+  assert.equal(C.paidInFullPayment(t, 2100000, [full]), null, 'total unchanged');
+  assert.equal(C.paidInFullPayment(t, 0, [full]), null, 'new total is zero');
+  assert.equal(C.paidInFullPayment(t, 2000000, [pay('p1', '2026-01-01', 1000000, { trainingId: 't1' })]), null, 'part paid');
+  assert.equal(C.paidInFullPayment(t, 2000000, [pay('p1', '2026-01-01', 2100000)]), null, 'not linked');
+  assert.equal(C.paidInFullPayment(t, 2000000, [full, pay('p2', '2026-01-02', 1, { trainingId: 't1', paymentType: 'refund' })]), null, 'more than one linked');
+});
