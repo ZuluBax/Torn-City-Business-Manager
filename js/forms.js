@@ -346,9 +346,13 @@
   async function confirmDeleteTraining(id) {
     const t = db.get('training', id);
     if (!t) return;
+    const linked = db.all('payments').filter((p) => p.trainingId === id);
+    const alsoPayments = linked.length
+      ? ` Its ${linked.length === 1 ? 'linked payment' : `${linked.length} linked payments`} (${linked.map((p) => ui.money(p.amount)).join(', ')}) will be deleted too.`
+      : '';
     const ok = await ui.confirmDialog({
       title: 'Delete training record?',
-      message: `This permanently deletes ${t.trainCount} train(s) for <strong>${esc(db.get('employees', t.employeeId)?.name || 'Unknown')}</strong> on ${U.formatDate(t.date)}.`,
+      message: `This permanently deletes ${t.trainCount} train(s) for <strong>${esc(db.get('employees', t.employeeId)?.name || 'Unknown')}</strong> on ${U.formatDate(t.date)}.${alsoPayments}`,
       confirmText: 'Delete', danger: true,
     });
     if (ok) ui.runAction(() => S.deleteTraining(id), 'Training record deleted');

@@ -142,3 +142,12 @@ test('paidInFullPayment: leaves ambiguous or partial payments alone', () => {
   assert.equal(C.paidInFullPayment(t, 2000000, [pay('p1', '2026-01-01', 2100000)]), null, 'not linked');
   assert.equal(C.paidInFullPayment(t, 2000000, [full, pay('p2', '2026-01-02', 1, { trainingId: 't1', paymentType: 'refund' })]), null, 'more than one linked');
 });
+
+test('removing a record and its linked payments leaves other records balanced', () => {
+  const t1 = train('t1', '2026-01-01', 1, 100), t2 = train('t2', '2026-01-02', 1, 100);
+  const linked = pay('p1', '2026-01-02', 100, { trainingId: 't2' });
+  assert.equal(C.buildLedger([t1], []).errors.length, 0);
+  // An unlinked payment that was covering t2 becomes an overpayment once t2 is gone.
+  assert.equal(C.buildLedger([t1], [pay('p2', '2026-01-03', 200)]).errors[0].code, 'overpayment');
+  assert.equal(C.buildLedger([t1, t2], [linked]).errors.length, 0);
+});

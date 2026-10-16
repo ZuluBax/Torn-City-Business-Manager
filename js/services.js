@@ -236,12 +236,14 @@
   async function deleteTraining(id) {
     const t = db.get('training', id);
     if (!t) return;
+    // Linked payments (and refunds) only make sense against this record, so they go with it.
     const linked = db.all('payments').filter((p) => p.trainingId === id);
-    if (linked.length) {
-      throw new ValidationError({ _form: `This record has ${linked.length} linked payment${linked.length === 1 ? '' : 's'}. Delete or re-link ${linked.length === 1 ? 'it' : 'them'} first.` });
-    }
-    checkLedger(t.employeeId, db.all('training').filter((x) => x.id !== id), db.all('payments'), '_form');
-    await db.commit([{ store: 'training', del: id }], { type: 'training_deleted', message: `Training deleted: ${employeeName(t.employeeId)}, ${t.trainCount} train(s) on ${U.formatDate(t.date)}` });
+    const remaining = db.all('payments').filter((p) => p.trainingId !== id);
+    // Unlinked payments may have been covering this record; without it they could be an overpayment.
+    checkLedger(t.employeeId, db.all('training').filter((x) => x.id !== id), remaining, '_form');
+    const ops = [{ store: 'training', del: id }, ...linked.map((p) => ({ store: 'payments', del: p.id }))];
+    const alsoPaid = linked.length ? ` and ${linked.length} linked payment${linked.length === 1 ? '' : 's'} (${linked.map((p) => money(p.amount)).join(', ')})` : '';
+    await db.commit(ops, { type: 'training_deleted', message: `Training deleted: ${employeeName(t.employeeId)}, ${t.trainCount} train(s) on ${U.formatDate(t.date)}${alsoPaid}` });
   }
 
   // ---------- Payments ----------

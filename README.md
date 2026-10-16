@@ -167,6 +167,7 @@ changes the format, `migrate()` in `js/backup.js` upgrades old backups before im
 | Refunds | Reduce what has been paid (newest records first if not linked). |
 | "Other" payments | Counted as other income. They don't change training balances. |
 | Editing a fully paid record | If the record has exactly one linked payment that covers it in full, changing the count or price updates that payment to the new total too. Part-paid records, or records with more than one linked payment, aren't changed automatically. |
+| Deleting a training record | Its linked payments (and refunds) are deleted with it, and the confirmation lists them first. Blocked if unlinked payments were covering it, because they would then be an overpayment. |
 | Overpaying | Blocked. A payment can't be more than is owed. Editing or deleting records that would cause an overpayment is also blocked. |
 | Salary cost (estimate) | Salary per day × days employed. Both the start and end days count. If someone's pay changed, each day uses the rate that applied on that day. Inactive staff still count until they get an end date. This does **not** copy Torn's exact payout rules. |
 | Training revenue | Counted when training is **recorded**, paid or not. "Cash collected" and "Outstanding" are shown next to it, so unpaid money is never hidden. |
