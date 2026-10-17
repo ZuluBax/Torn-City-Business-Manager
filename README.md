@@ -61,7 +61,7 @@ but that copy keeps its own separate browser data.
 |---|---|
 | Server | `server/server.py`. Uses only Python's standard library, so nothing to install. Runs as the systemd service `dukes-music-box` (the internal name, kept for compatibility) as your SSH user, on port 8010. It starts on boot and restarts if it crashes. |
 | Backups | A copy is saved to `~/dukes-music-box/backups/dukes-YYYY-MM-DD.db` every day, and the last 5 are kept (older ones are deleted automatically). |
-| Torn | The Pi holds the API key (browsers only see "a key is set"). It refreshes company funds, trains available, each employee's "last active" time and their working stats every 15 minutes, plus an extra refresh at 18:11 TCT because Torn updates stats daily at 18:10. Position, wage and joins/leaves still need the import button, because they affect money. If Torn says "too many requests", it retries once a minute later. |
+| Torn | The Pi holds the API key (browsers only see "a key is set"). It refreshes company funds, trains available, each employee's "last active" time, their working stats and their effectiveness/addiction every 15 minutes, plus an extra refresh at 18:11 TCT because Torn updates stats daily at 18:10. It also saves one effectiveness reading per Torn day (see "Effectiveness and addiction"). Position, wage and joins/leaves still need the import button, because they affect money. If Torn says "too many requests", it retries once a minute later. |
 | Several devices | Other devices pick up changes within about 15 seconds. If two devices edit at once, the later save is refused and the page refreshes, so nothing is overwritten by accident. |
 | Security | Home network only, with no login. Anyone on your Wi-Fi can open it. **Don't port-forward it.** For access away from home, use Tailscale. |
 
@@ -222,6 +222,36 @@ numbers.
 
 ---
 
+## Effectiveness and addiction
+
+Torn gives each employee an **effectiveness** score, and lower effectiveness means less
+daily income. One part of it is an **addiction** penalty (from drug use), which Torn shows
+as a negative number. Both come from the same Torn call the app already makes, so there
+are no extra API calls.
+
+- **Addiction column** (Employees page): *None* (green), *-1 to -4* (amber), *-5 or worse*
+  (red). The -5 line is our own choice, not a Torn rule. Hover to see total effectiveness.
+- **Effectiveness line** on each profile: total score and addiction.
+- **Effectiveness history** on each profile: one row per Torn day for the last 30 days, with
+  effectiveness, addiction and the company's daily income, so you can line them up.
+
+How the daily log works:
+1. Torn recalculates effectiveness once a day at about **18:09 TCT**. The Pi refreshes at
+   18:11 TCT, so new numbers show within minutes.
+2. Each reading is filed under the **Torn day** it belongs to. A reading at 02:00 counts as
+   the previous day, because it's still the same tick.
+3. One record per day, keyed by date. A later reading that day replaces the earlier one, so
+   retries never create duplicates, and unchanged numbers aren't saved again.
+4. Readings between **18:00 and 18:11 TCT are skipped**, because they could fall either
+   side of the tick and put today's numbers under yesterday's date.
+
+Torn leaves out the addiction field when there's no penalty, so the app treats a missing
+value as 0. On the Pi the log is written by the background refresh. In the double-click
+copy it's only written when you press Import from Torn. History starts on 17 Oct 2026, the
+day this was added.
+
+---
+
 ## Features (Version 1)
 
 - **Dashboard:** 8 summary cards, financial and training summaries, who owes money (with a
@@ -232,7 +262,7 @@ numbers.
   an employee who has no history. Job fit, suggested job and a "Best for each job" ranking
   (see "Job fit and job suggestions").
 - **Employee profile:** details, money summary, net value to the company, and history of
-  training, payments and salary changes. Quick actions are on the profile too.
+  training, payments, salary changes and daily effectiveness/addiction. Quick actions are on the profile too.
 - **Training:** summary cards, a record form with a live total, upfront payment, filters
   (employee, dates, payment status, train type) and a totals row.
 - **Payments:** record train payments, other payments and refunds. You can link a payment to
@@ -302,6 +332,11 @@ other by **id**, never by name. Demo records also have `isDemo: true`.
 | `income` | `date, category, description, amount, notes` |
 | `settings` | One record (`key: 'app'`): `companyName, currency, trainPrice, positions[], expenseCategories[], incomeCategories[], theme, jobLimits{jobName: maxPeople}` (a job missing from `jobLimits` has no limit) |
 | `activity` | `at, type, message`. Only the newest 300 are kept. |
+| `effectivenessLog` | One per Torn day, `id` = `date` (`YYYY-MM-DD`): `takenAt, dailyIncome, employees{tornId: {total, addiction}}`. Written by the app, not typed in. |
+
+The latest effectiveness and "last active" figures live in `settings.tornCompany`
+(`effectiveness`, `lastActive`), not on the employee records, and are replaced on every
+refresh.
 
 A note on two choices that differ from the original spec:
 - **No `salaryPerDay` field on employees.** The app keeps `salaryHistory` instead, so a pay
@@ -322,6 +357,8 @@ A note on two choices that differ from the original spec:
 - Job suggestions only know the Music Store's jobs. Other company types still work, but
   they get no job fit or suggestions.
 - Data is saved per browser and per address (see "Running it").
+- Effectiveness history only covers days when the Pi (or an import) took a reading. Missed
+  days stay blank, and nothing from before 17 Oct 2026 can be recovered.
 
 ## Ideas for Version 2
 
