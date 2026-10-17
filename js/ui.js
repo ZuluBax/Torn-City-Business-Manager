@@ -309,6 +309,24 @@
     return `<span class="badge badge-${tone}" data-active-at="${la.at}" title="Last action ${esc(U.formatDateTime(la.at))}">${esc(text)}</span>`;
   }
 
+  // ---------- Effectiveness / addiction ----------
+  // From the same company snapshot. Addiction is a negative effectiveness penalty, and lower
+  // effectiveness means less daily income. The -5 red line is our own nudge, not a Torn rule.
+
+  function effectivenessOf(tornId) {
+    const tc = DMB.db.settings().tornCompany;
+    return (tc && tc.effectiveness && tc.effectiveness[tornId]) || null;
+  }
+
+  function addictionBadge(tornId) {
+    const ef = effectivenessOf(tornId);
+    if (!ef) return '<span class="muted" title="No effectiveness data yet. Import from Torn to fetch it.">—</span>';
+    const title = `Effectiveness ${ef.total}`;
+    if (!ef.addiction) return `<span class="badge badge-green" title="${esc(title)}">None</span>`;
+    const tone = ef.addiction <= -5 ? 'red' : 'amber';
+    return `<span class="badge badge-${tone}" title="${esc(title)}, of which addiction ${ef.addiction}">${ef.addiction}</span>`;
+  }
+
   function tickLastActive(root) {
     const now = Date.now();
     (root || document).querySelectorAll('[data-active-at]').forEach((el) => {
@@ -430,7 +448,7 @@
   DMB.ui = {
     icon, toast, openModal, confirmDialog, readForm, clearErrors, showErrors, bindSubmit, runAction,
     field, options, mapOptions, employeeOptions, badge, statusBadge, payStatusBadge, paymentTypeBadge,
-    trainTypeBadge, money, employeeLink, lastActiveOf, lastActiveBadge, tickLastActive, emptyState, table, pageHeader, panel, statCard, barList, dateRangeControls,
+    trainTypeBadge, money, employeeLink, lastActiveOf, lastActiveBadge, tickLastActive, effectivenessOf, addictionBadge, emptyState, table, pageHeader, panel, statCard, barList, dateRangeControls,
     bindFilters, rangeOf, rangeLabel, downloadFile, toCsv,
   };
 })(window.DMB = window.DMB || {});

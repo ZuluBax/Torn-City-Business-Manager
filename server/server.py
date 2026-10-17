@@ -299,6 +299,20 @@ def last_active_map(employees) -> dict:
     return out
 
 
+def effectiveness_map(employees) -> dict:
+    """Mirror of effectivenessMap() in js/torn.js: tornId -> {total, addiction}.
+    Torn omits "addiction" when there is no penalty, so missing means 0."""
+    def num(v):
+        return isinstance(v, (int, float)) and not isinstance(v, bool)
+    out = {}
+    for torn_id, t in (employees or {}).items():
+        eff = t.get("effectiveness") if isinstance(t, dict) else None
+        if not isinstance(eff, dict) or not num(eff.get("total")):
+            continue
+        out[str(torn_id)] = {"total": eff["total"], "addiction": eff["addiction"] if num(eff.get("addiction")) else 0}
+    return out
+
+
 def _fmt_num(n) -> str:
     """Mirror of formatNumber() in js/util.js (en-US grouping, "—" for non-numbers)."""
     if isinstance(n, bool) or not isinstance(n, (int, float)) or n != n or n in (float("inf"), float("-inf")):
@@ -333,6 +347,7 @@ def snapshot_from_torn(data: dict) -> dict:
         "advertisingBudget": d.get("advertising_budget"), "popularity": d.get("popularity"),
         "efficiency": d.get("efficiency"), "environment": d.get("environment"),
         "lastActive": last_active_map(data.get("company_employees")),
+        "effectiveness": effectiveness_map(data.get("company_employees")),
         "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 

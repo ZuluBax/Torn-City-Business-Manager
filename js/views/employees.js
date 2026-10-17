@@ -37,6 +37,12 @@
     return sug.job === e.position ? esc(sug.job) : `<strong>${esc(sug.job)}</strong>`;
   }
 
+  function effectivenessText(tornId) {
+    const ef = ui.effectivenessOf(tornId);
+    if (!ef) return '<span class="muted">—</span>';
+    return `${U.formatNumber(ef.total)} · addiction ${ui.addictionBadge(tornId)}`;
+  }
+
   function jobFitDetails(e) {
     const fit = J.jobFit(e);
     if (!fit) return '<span class="muted">Needs working stats (MAN / INT / END) to compare.</span>';
@@ -131,6 +137,7 @@
         { label: 'Start date', render: (r) => U.formatDate(r.e.startDate) },
         { label: 'Status', render: (r) => ui.statusBadge(r.e.status) },
         { label: 'Last active', render: (r) => ui.lastActiveBadge(r.e.tornId) },
+        { label: 'Addiction', render: (r) => ui.addictionBadge(r.e.tornId) },
         { label: 'Trains', align: 'right', render: (r) => U.formatNumber(r.stats.trainsReceived) },
         { label: 'Outstanding', align: 'right', render: (r) => (r.stats.outstanding ? `<span class="text-red">${ui.money(r.stats.outstanding)}</span>` : '<span class="muted">—</span>') },
         { label: '', cls: 'actions', render: (r) => `
@@ -221,6 +228,7 @@
             <dt>End date</dt><dd>${e.endDate ? U.formatDate(e.endDate) : '<span class="muted">—</span>'}</dd>
             ${e.reasonForLeaving ? `<dt>Reason for leaving</dt><dd>${esc(e.reasonForLeaving)}</dd>` : ''}
             <dt>Working stats</dt><dd class="pre">${e.workingStats ? esc(e.workingStats) : '<span class="muted">—</span>'}</dd>
+            <dt>Effectiveness</dt><dd>${effectivenessText(e.tornId)}</dd>
             <dt>Job fit</dt><dd>${jobFitDetails(e)}</dd>
             <dt>Notes</dt><dd class="pre">${e.notes ? esc(e.notes) : '<span class="muted">—</span>'}</dd>
           </dl>`)}

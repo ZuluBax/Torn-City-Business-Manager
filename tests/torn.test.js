@@ -73,6 +73,15 @@ test('snapshot keeps each employee\'s last action time, skipping missing or bad 
   assert.deepEqual(snap.lastActive, { 111: { at: 1759700000000, status: 'Idle' } });
 });
 
+test('snapshot keeps effectiveness and addiction, treating a missing addiction as no penalty', () => {
+  const data = company();
+  data.company_employees[111].effectiveness = { working_stats: 72, merits: 5, addiction: -5, total: 100 };
+  data.company_employees[222].effectiveness = { working_stats: 91, total: 115 };
+  const snap = T.companySnapshot(data, '2026-10-06T12:00:00Z');
+  assert.deepEqual(snap.effectiveness, { 111: { total: 100, addiction: -5 }, 222: { total: 115, addiction: 0 } });
+  assert.deepEqual(T.effectivenessMap({ 1: { effectiveness: { total: 'n/a' } }, 2: {}, 3: null }), {});
+});
+
 test('fetchEvents explains a Cloudflare 429 instead of failing to parse HTML', async () => {
   const realFetch = global.fetch;
   global.fetch = async () => ({ status: 429, ok: false, json: async () => { throw new SyntaxError('Unexpected token <'); } });

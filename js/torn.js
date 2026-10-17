@@ -75,8 +75,21 @@
       funds: d.company_funds, trainsAvailable: d.trains_available, advertisingBudget: d.advertising_budget,
       popularity: d.popularity, efficiency: d.efficiency, environment: d.environment,
       lastActive: lastActiveMap(data.company_employees),
+      effectiveness: effectivenessMap(data.company_employees),
       fetchedAt,
     };
+  }
+
+  // tornId -> { total, addiction }. Torn omits "addiction" when there is no penalty, so a
+  // missing value means 0; it is negative otherwise. No numeric total = left out ("—").
+  function effectivenessMap(employees) {
+    const out = {};
+    for (const [tornId, t] of Object.entries(employees || {})) {
+      const eff = t && t.effectiveness;
+      if (!eff || !Number.isFinite(eff.total)) continue;
+      out[tornId] = { total: eff.total, addiction: Number.isFinite(eff.addiction) ? eff.addiction : 0 };
+    }
+    return out;
   }
 
   // tornId -> { at: epoch ms, status: 'Online' | 'Idle' | 'Offline' }. Employees with a missing
@@ -226,7 +239,7 @@
   }
 
   return {
-    KEY_PATTERN, fetchCompany, buildPlan, companySnapshot, lastActiveMap, setupSpend, isEmpty, stripTags,
+    KEY_PATTERN, fetchCompany, buildPlan, companySnapshot, lastActiveMap, effectivenessMap, setupSpend, isEmpty, stripTags,
     EVENTS_URL, fetchEvents, isMoneyEvent, parseMoneyEvent, trainCountFrom, classifyMoneyEvent,
   };
 });
