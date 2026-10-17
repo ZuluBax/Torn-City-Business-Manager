@@ -43,6 +43,15 @@
     return `${U.formatNumber(ef.total)} · addiction ${ui.addictionBadge(tornId)}`;
   }
 
+  // Newest first, last 30 Torn days on which this employee appeared in the log.
+  function effectivenessHistory(tornId) {
+    return db.all('effectivenessLog')
+      .filter((r) => r.employees && r.employees[tornId])
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 30)
+      .map((r) => ({ date: r.date, dailyIncome: r.dailyIncome, ef: r.employees[tornId] }));
+  }
+
   function jobFitDetails(e) {
     const fit = J.jobFit(e);
     if (!fit) return '<span class="muted">Needs working stats (MAN / INT / END) to compare.</span>';
@@ -273,6 +282,17 @@
           { label: 'For training', render: (p) => { const t = p.trainingId && db.get('training', p.trainingId); return t ? `${U.formatDate(t.date)} (${t.trainCount})` : '<span class="muted">Oldest balance</span>'; } },
           { label: 'Notes', cls: 'notes', render: (p) => esc(p.notes) },
           { label: '', cls: 'actions', render: (p) => `<button type="button" class="icon-btn" data-edit-payment="${esc(p.id)}" title="Edit" aria-label="Edit">${ui.icon('edit')}</button>` },
+        ],
+      }))}
+
+      ${ui.panel('Effectiveness history', ui.table({
+        rows: effectivenessHistory(e.tornId),
+        empty: 'No daily readings yet. The Pi saves one each day after Torn\'s 18:10 TCT update.',
+        columns: [
+          { label: 'Torn day', render: (r) => U.formatDate(r.date) },
+          { label: 'Effectiveness', align: 'right', render: (r) => U.formatNumber(r.ef.total) },
+          { label: 'Addiction', render: (r) => ui.addictionBadgeOf(r.ef) },
+          { label: 'Company daily income', align: 'right', render: (r) => (r.dailyIncome == null ? '<span class="muted">—</span>' : ui.money(r.dailyIncome)) },
         ],
       }))}
 

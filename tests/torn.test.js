@@ -82,6 +82,31 @@ test('snapshot keeps effectiveness and addiction, treating a missing addiction a
   assert.deepEqual(T.effectivenessMap({ 1: { effectiveness: { total: 'n/a' } }, 2: {}, 3: null }), {});
 });
 
+test('effectiveness log date follows the 18:11 TCT tick and skips the window around it', () => {
+  const at = (iso) => Date.parse(iso);
+  assert.equal(T.effectivenessLogDate(at('2026-10-17T18:11:00Z')), '2026-10-17');
+  assert.equal(T.effectivenessLogDate(at('2026-10-17T23:59:00Z')), '2026-10-17');
+  assert.equal(T.effectivenessLogDate(at('2026-10-18T02:00:00Z')), '2026-10-17');
+  assert.equal(T.effectivenessLogDate(at('2026-10-18T17:59:59Z')), '2026-10-17');
+  assert.equal(T.effectivenessLogDate(at('2026-10-18T18:00:00Z')), null);
+  assert.equal(T.effectivenessLogDate(at('2026-10-18T18:10:59Z')), null);
+  assert.equal(T.effectivenessLogDate(at('2026-10-01T09:00:00Z')), '2026-09-30');
+});
+
+test('effectiveness log entry is keyed by Torn day and compares without takenAt', () => {
+  const snap = { dailyIncome: 120000, effectiveness: { 111: { total: 100, addiction: -5 } } };
+  const a = T.effectivenessLogEntry(snap, Date.parse('2026-10-17T18:11:30Z'));
+  assert.deepEqual(a, { id: '2026-10-17', date: '2026-10-17', takenAt: '2026-10-17T18:11:30.000Z', dailyIncome: 120000, employees: snap.effectiveness });
+  const b = T.effectivenessLogEntry(snap, Date.parse('2026-10-17T21:00:00Z'));
+  assert.equal(b.id, a.id);
+  assert.ok(T.sameLogEntry(a, b));
+  assert.ok(!T.sameLogEntry(a, { ...b, employees: { 111: { total: 98, addiction: -7 } } }));
+  assert.ok(!T.sameLogEntry(null, b));
+  assert.equal(T.effectivenessLogEntry(snap, Date.parse('2026-10-17T18:05:00Z')), null);
+  assert.equal(T.effectivenessLogEntry({ ...snap, effectiveness: {} }, Date.parse('2026-10-17T20:00:00Z')), null);
+  assert.equal(T.effectivenessLogEntry({ effectiveness: snap.effectiveness }, Date.parse('2026-10-17T20:00:00Z')).dailyIncome, null);
+});
+
 test('fetchEvents explains a Cloudflare 429 instead of failing to parse HTML', async () => {
   const realFetch = global.fetch;
   global.fetch = async () => ({ status: 429, ok: false, json: async () => { throw new SyntaxError('Unexpected token <'); } });

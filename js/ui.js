@@ -318,8 +318,10 @@
     return (tc && tc.effectiveness && tc.effectiveness[tornId]) || null;
   }
 
-  function addictionBadge(tornId) {
-    const ef = effectivenessOf(tornId);
+  const addictionBadge = (tornId) => addictionBadgeOf(effectivenessOf(tornId));
+
+  // ef = { total, addiction }, from the snapshot or a day in the effectiveness log.
+  function addictionBadgeOf(ef) {
     if (!ef) return '<span class="muted" title="No effectiveness data yet. Import from Torn to fetch it.">—</span>';
     const title = `Effectiveness ${ef.total}`;
     if (!ef.addiction) return `<span class="badge badge-green" title="${esc(title)}">None</span>`;
@@ -448,7 +450,7 @@
   DMB.ui = {
     icon, toast, openModal, confirmDialog, readForm, clearErrors, showErrors, bindSubmit, runAction,
     field, options, mapOptions, employeeOptions, badge, statusBadge, payStatusBadge, paymentTypeBadge,
-    trainTypeBadge, money, employeeLink, lastActiveOf, lastActiveBadge, tickLastActive, effectivenessOf, addictionBadge, emptyState, table, pageHeader, panel, statCard, barList, dateRangeControls,
+    trainTypeBadge, money, employeeLink, lastActiveOf, lastActiveBadge, tickLastActive, effectivenessOf, addictionBadge, addictionBadgeOf, emptyState, table, pageHeader, panel, statCard, barList, dateRangeControls,
     bindFilters, rangeOf, rangeLabel, downloadFile, toCsv,
   };
 })(window.DMB = window.DMB || {});

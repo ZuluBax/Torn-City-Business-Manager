@@ -485,6 +485,13 @@
       summary.push(`setup spend ${money(s.amount)} added`);
     }
 
+    // On the Pi the background refresh keeps this log, so only the browser-only copy writes it
+    // here; two writers would just race each other into 409 conflicts.
+    if (db.mode !== 'server') {
+      const entry = DMB.torn.effectivenessLogEntry(snapshot, Date.now());
+      if (entry && !DMB.torn.sameLogEntry(entry, db.get('effectivenessLog', entry.id))) ops.push({ store: 'effectivenessLog', put: entry });
+    }
+
     ops.push({ store: 'settings', put: settings });
     await db.commit(ops, { type: 'torn_import', message: `Imported from Torn: ${summary.length ? summary.join(', ') : 'company figures refreshed'}` });
     return summary;

@@ -103,6 +103,36 @@
     return out;
   }
 
+  // ---------- Daily effectiveness log ----------
+  // Torn recalculates effectiveness (and so addiction) once a day at about 18:09 TCT (= UTC).
+  // A reading belongs to the Torn day that tick began, so 02:00 counts as the previous date.
+  // Readings from 18:00 to 18:11 are skipped: they could fall either side of the tick and
+  // would put today's numbers under yesterday's date.
+  const LOG_SKIP_FROM = 18 * 60, LOG_DAY_STARTS = 18 * 60 + 11;
+
+  function effectivenessLogDate(ms) {
+    const d = new Date(ms);
+    const mins = d.getUTCHours() * 60 + d.getUTCMinutes();
+    if (mins >= LOG_SKIP_FROM && mins < LOG_DAY_STARTS) return null;
+    return (mins >= LOG_DAY_STARTS ? d : new Date(ms - 86400000)).toISOString().slice(0, 10);
+  }
+
+  // One record per Torn day, keyed by date. A later reading the same day replaces the earlier
+  // one (latest wins), which also corrects a day when Torn ran the tick late. Retrying after a
+  // rate limit therefore can never add a second row.
+  function effectivenessLogEntry(snapshot, ms) {
+    const date = effectivenessLogDate(ms);
+    if (!date || !snapshot || !Object.keys(snapshot.effectiveness || {}).length) return null;
+    return {
+      id: date, date, takenAt: new Date(ms).toISOString(),
+      dailyIncome: Number.isFinite(snapshot.dailyIncome) ? snapshot.dailyIncome : null,
+      employees: snapshot.effectiveness,
+    };
+  }
+
+  // takenAt is ignored, so a re-reading of the same numbers isn't a change.
+  const sameLogEntry = (a, b) => !!a && !!b && a.dailyIncome === b.dailyIncome && JSON.stringify(a.employees) === JSON.stringify(b.employees);
+
   /*
    * Setup spend = deposits − withdrawals − funds left. This only holds while the company has
    * never earned anything and the news still reaches back to the day it was founded; in any
@@ -239,7 +269,7 @@
   }
 
   return {
-    KEY_PATTERN, fetchCompany, buildPlan, companySnapshot, lastActiveMap, effectivenessMap, setupSpend, isEmpty, stripTags,
+    KEY_PATTERN, fetchCompany, buildPlan, companySnapshot, lastActiveMap, effectivenessMap, effectivenessLogDate, effectivenessLogEntry, sameLogEntry, setupSpend, isEmpty, stripTags,
     EVENTS_URL, fetchEvents, isMoneyEvent, parseMoneyEvent, trainCountFrom, classifyMoneyEvent,
   };
 });

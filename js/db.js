@@ -10,8 +10,8 @@
   'use strict';
 
   const DB_NAME = 'dukes-music-box';
-  const DB_VERSION = 2; // v2: added tornEvents
-  const RECORD_STORES = ['employees', 'training', 'payments', 'expenses', 'income', 'activity', 'tornEvents'];
+  const DB_VERSION = 3; // v2: added tornEvents; v3: added effectivenessLog
+  const RECORD_STORES = ['employees', 'training', 'payments', 'expenses', 'income', 'activity', 'tornEvents', 'effectivenessLog'];
   const ALL_STORES = [...RECORD_STORES, 'settings'];
   const SETTINGS_KEY = 'app';
   const ACTIVITY_LIMIT = 300;

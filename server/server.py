@@ -33,7 +33,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-RECORD_STORES = {"employees", "training", "payments", "expenses", "income", "activity", "tornEvents"}
+RECORD_STORES = {"employees", "training", "payments", "expenses", "income", "activity", "tornEvents", "effectivenessLog"}
 ALL_STORES = RECORD_STORES | {"settings"}
 SETTINGS_ID = "app"
 SECRET_FIELD = "tornApiKey"
@@ -49,6 +49,8 @@ RATE_LIMIT_RETRY_SECONDS = 60
 # Torn updates working stats once a day at 18:10 TCT (= UTC). One extra refresh a minute
 # later gets them on screen promptly instead of up to 15 minutes late.
 STATS_REFRESH_TCT = (18, 11)
+# Mirror of LOG_SKIP_FROM / LOG_DAY_STARTS in js/torn.js (minutes past midnight TCT).
+LOG_SKIP_FROM, LOG_DAY_STARTS = 18 * 60, 18 * 60 + 11
 BACKUPS_KEPT = 5  # one per day, so this is days of history; each file is ~80 KB
 
 log = logging.getLogger("dukes")
@@ -202,6 +204,33 @@ class Store:
             self.db.execute("COMMIT")
             return len(rows)
 
+    def log_effectiveness(self, snapshot: dict, ts: float) -> bool:
+        """Mirror of effectivenessLogEntry()/sameLogEntry() in js/torn.js. Upserts the day's
+        row; returns True only when something changed, so unchanged re-reads don't bump the
+        version and make open pages reload."""
+        day = effectiveness_log_date(ts)
+        employees = (snapshot or {}).get("effectiveness") or {}
+        if not day or not employees:
+            return False
+        income = snapshot.get("dailyIncome")
+        entry = {"id": day, "date": day, "takenAt": datetime.fromtimestamp(ts, timezone.utc).isoformat().replace("+00:00", "Z"),
+                 "dailyIncome": income if isinstance(income, (int, float)) and not isinstance(income, bool) else None,
+                 "employees": employees}
+        with self.lock:
+            row = self.db.execute("SELECT json FROM records WHERE store='effectivenessLog' AND id=?", (day,)).fetchone()
+            old = json.loads(row[0]) if row else None
+            if old and old.get("dailyIncome") == entry["dailyIncome"] and old.get("employees") == employees:
+                return False
+            self.db.execute("BEGIN IMMEDIATE")
+            try:
+                self.db.execute("INSERT OR REPLACE INTO records VALUES ('effectivenessLog', ?, ?)", (day, json.dumps(entry)))
+                self._bump({"effectivenessLog"})
+                self.db.execute("COMMIT")
+            except Exception:
+                self.db.execute("ROLLBACK")
+                raise
+            return True
+
     def update_employee_stats(self, stats_by_torn_id: dict) -> int:
         """Overwrite workingStats for employees matched by Torn ID; returns how many changed.
         Only stats are touched: position, wage and joins/leaves still go through the import
@@ -297,6 +326,16 @@ def last_active_map(employees) -> dict:
         if isinstance(ts, (int, float)) and not isinstance(ts, bool) and ts > 0:
             out[str(torn_id)] = {"at": int(ts * 1000), "status": str(la.get("status") or "Offline")}
     return out
+
+
+def effectiveness_log_date(ts: float):
+    """Mirror of effectivenessLogDate() in js/torn.js: the Torn day a reading belongs to, or
+    None inside the 18:00-18:11 window around Torn's daily tick."""
+    d = datetime.fromtimestamp(ts, timezone.utc)
+    mins = d.hour * 60 + d.minute
+    if LOG_SKIP_FROM <= mins < LOG_DAY_STARTS:
+        return None
+    return (d if mins >= LOG_DAY_STARTS else d - timedelta(days=1)).date().isoformat()
 
 
 def effectiveness_map(employees) -> dict:
@@ -418,9 +457,12 @@ def background_loop(store: Store, backup_dir: Path, stop: threading.Event):
                         limited = is_rate_limited(data)
                         log.warning("Torn refresh: API error code %s", data["error"].get("code"))
                     else:
-                        store.update_settings_fields({"tornCompany": snapshot_from_torn(data)})
+                        snap = snapshot_from_torn(data)
+                        store.update_settings_fields({"tornCompany": snap})
                         changed = store.update_employee_stats(stats_map(data.get("company_employees")))
-                        log.info("Torn company figures refreshed%s", f"; stats updated for {changed} employee(s)" if changed else "")
+                        logged = store.log_effectiveness(snap, time.time())
+                        log.info("Torn company figures refreshed%s%s", f"; stats updated for {changed} employee(s)" if changed else "",
+                                 "; effectiveness logged" if logged else "")
                 except Exception as e:  # network blips are expected; try again next round
                     limited = is_rate_limited(exc=e)
                     log.warning("Torn refresh failed: %s", e if isinstance(e, TornHTTPError) else type(e).__name__)
