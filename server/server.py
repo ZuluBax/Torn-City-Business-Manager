@@ -52,8 +52,8 @@ STATS_REFRESH_TCT = (18, 11)
 # Mirror of LOG_SKIP_FROM / LOG_DAY_STARTS in js/torn.js (minutes past midnight TCT).
 LOG_SKIP_FROM, LOG_DAY_STARTS = 18 * 60, 18 * 60 + 11
 BACKUPS_KEPT = 5  # one per day, so this is days of history; each file is ~80 KB
-# Names on disk. deploy.sh renames files from the old "dukes" names to these, so pruning by
-# BACKUP_PREFIX keeps covering every backup.
+# Names on disk. Pruning only looks at BACKUP_PREFIX files, so changing it would leave older
+# backups behind forever unless they are renamed too.
 APP_DIR_NAME = "torn-company-manager"
 DB_FILE = "company.db"
 BACKUP_PREFIX = "company-"

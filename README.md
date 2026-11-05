@@ -75,13 +75,6 @@ but that copy keeps its own separate browser data.
 
 Deploys only replace `~/torn-company-manager/app`. The `data/` and `backups/` folders are never
 touched.
-
-**Upgrading an older install:** older versions used the folder and service name
-`dukes-music-box`. The next deploy moves it to `torn-company-manager` once by itself (and
-renames `dukes*.db` files to `company*.db`). It leaves a full copy at
-`~/dukes-music-box.pre-rename`, which you can delete once everything looks right. You can't
-`--rollback` past that move.
-
 **Restore a nightly backup on the Pi:**
 `sudo systemctl stop torn-company-manager`, then copy the backup file over
 `~/torn-company-manager/data/company.db`, delete `company.db-wal` and `company.db-shm` if they exist,
