@@ -278,15 +278,20 @@ saves that day's `dailyIncome` and `dailyCustomers`. That means:
 
 ## Features (Version 1)
 
-- **Dashboard:** 8 summary cards, financial and training summaries, who owes money (with a
-  quick "Pay" button), employee overview and recent activity.
+- **Dashboard:** summary cards, a Sales & customers panel (daily, weekly, monthly; see
+  "Sales and customers"), financial and training summaries, who owes money (with a quick
+  "Pay" button), employee overview and recent activity. Every box can be moved and resized
+  with **Arrange**.
 - **Employees:** add, edit, search (by name or Torn ID), filter by status or position, and
-  sort by name, salary, start date or amount owed. Duplicate Torn IDs are blocked. Mark
-  someone as *Left* (history is kept) or re-activate them. You can only permanently delete
-  an employee who has no history. Job fit, suggested job and a "Best for each job" ranking
-  (see "Job fit and job suggestions").
+  sort by name, salary, start date or amount owed. The count shows current staff; people
+  who left are hidden by default (pick *Left* in the status filter to see them). Duplicate
+  Torn IDs are blocked. Mark someone as *Left* (history is kept) or re-activate them. You
+  can only permanently delete an employee who has no history. Job fit, suggested job (with
+  a chosen-job picker) and a "Best for each job" ranking (see "Job fit and job suggestions").
 - **Employee profile:** details, money summary, net value to the company, and history of
-  training, payments, salary changes and daily effectiveness/addiction. Quick actions are on the profile too.
+  training, payments, salary changes and daily effectiveness/addiction. Training can be
+  edited or deleted right there. Deleting removes the trains, the money owed and any linked
+  payment, for example when someone never paid. Quick actions are on the profile too.
 - **Training:** summary cards, a record form with a live total, upfront payment, filters
   (employee, dates, payment status, train type) and a totals row.
 - **Payments:** record train payments, other payments and refunds. You can link a payment to
@@ -318,7 +323,7 @@ index.html            App shell and the order scripts load in
 css/styles.css        All styling. Colours are CSS variables; light theme via [data-theme]
 js/util.js            Dates, money formatting and parsing, escaping (pure, no DOM)
 js/torn.js            Torn API fetch + import plan (preview before saving)
-js/calc.js            ALL financial maths: ledger, salary, summaries (pure, unit-tested)
+js/calc.js            ALL financial maths: ledger, salary, summaries, sales by month (pure, unit-tested)
 js/jobs.js            Music Store job table, job fit, ranking and suggestions with job limits (pure, unit-tested)
 js/db.js              IndexedDB storage with an in-memory copy and atomic multi-record saves
 js/services.js        Business rules: validation, data rules, activity log. The only writer.
@@ -327,9 +332,14 @@ js/forms.js           Employee, training, payment and income/expense forms (used
 js/backup.js          Export, import (with validation and migration hook), demo data, reset
 js/views/*.js         One file per page
 js/app.js             Start-up, hash router (#/employees/<id>), re-draws when data changes
+js/layout.js          Rearrangeable dashboard grid (saved order and widths)
+server/server.py      Pi server: SQLite store, /api, Torn polling, daily backups (stdlib only)
+deploy/               deploy.sh (test, upload, health check, auto-rollback) and the systemd unit
 tests/calc.test.js    Node unit tests for calc.js and util.js
 tests/jobs.test.js    Node unit tests for jobs.js
+tests/torn*.test.js   Node unit tests for torn.js (import plan, daily log, payment messages)
 backups/              Somewhere to keep exported backup files
+TODO.md               Where we left off, and what's next
 ```
 
 **Why plain scripts and not ES modules?** Browsers block modules on pages opened straight
@@ -383,15 +393,10 @@ A note on two choices that differ from the original spec:
 - Data is saved per browser and per address (see "Running it").
 - Effectiveness history only covers days when the Pi (or an import) took a reading. Missed
   days stay blank, and nothing from before 17 Oct 2026 can be recovered.
+- Monthly sales and customers come from that same log, so they have the same gaps. Customers
+  only count from 5 Nov 2026.
+- `chosenJob` is a choice made in this app only. It never changes anyone's job on Torn.
 
-## Ideas for Version 2
+## Ideas for later
 
-1. **Record actual salary payments** to compare against the estimate.
-2. **Employment periods** to handle people who leave and come back.
-3. **Reminder to back up** (for example, a banner if the last export was more than 7 days ago).
-4. **More Torn data:** trains given and payments received, if Torn exposes them reliably. This needs an API key
-   and online access, so it would be opt-in.
-5. **Payment reminders** and Discord notifications for people who owe money.
-6. **Multi-device access:** a small hosted backend (for example Supabase or Cloudflare D1)
-   with login, replacing `db.js` behind the same interface.
-7. **Employee performance scoring**, automatic monthly reports, and richer profit analytics.
+The backlog and "where we left off" notes live in [TODO.md](TODO.md).
