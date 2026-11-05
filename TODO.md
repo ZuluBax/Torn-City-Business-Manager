@@ -28,9 +28,7 @@ Facts to remember:
 
 ## Next up
 
-1. **Check the new screens in a browser.** The Sales panel and chosen-job dropdowns were
-   used once live (5 Nov) but haven't been fully looked over.
-2. **Addiction vs income.** Once the daily log has a few more weeks (from about early
+1. **Addiction vs income.** Once the daily log has a few more weeks (from about early
    December), compare employees' addiction against daily sales.
 
 ## Ideas (not started)
