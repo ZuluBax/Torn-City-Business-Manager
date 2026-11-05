@@ -316,7 +316,38 @@
     };
   }
 
+  /*
+   * Company sales by calendar month, from the daily effectiveness log -> newest month first:
+   *   [{ month: 'YYYY-MM', income, incomeDays, customers, customerDays }]
+   * Each row holds Torn's figure for the last finished day as read on row.date, so a month
+   * only adds up the days the app actually logged. Rows without a number are skipped rather
+   * than counted as 0; incomeDays/customerDays say how many days each total covers
+   * (customers were only logged from a later version, so their count can be lower).
+   */
+  function salesByMonth(log) {
+    const months = new Map();
+    for (const r of log || []) {
+      if (!r || !U.isISODate(r.date)) continue;
+      const key = r.date.slice(0, 7);
+      const m = months.get(key) || { month: key, income: 0, incomeDays: 0, customers: 0, customerDays: 0 };
+      if (Number.isFinite(r.dailyIncome)) { m.income += r.dailyIncome; m.incomeDays++; }
+      if (Number.isFinite(r.dailyCustomers)) { m.customers += r.dailyCustomers; m.customerDays++; }
+      months.set(key, m);
+    }
+    return [...months.values()].filter((m) => m.incomeDays || m.customerDays).sort((a, b) => (a.month < b.month ? 1 : -1));
+  }
+
+  // Newest `n` logged days that have a sales or customer number -> [{ date, income, customers }].
+  function recentSales(log, n) {
+    return (log || [])
+      .filter((r) => r && U.isISODate(r.date) && (Number.isFinite(r.dailyIncome) || Number.isFinite(r.dailyCustomers)))
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, n)
+      .map((r) => ({ date: r.date, income: Number.isFinite(r.dailyIncome) ? r.dailyIncome : null, customers: Number.isFinite(r.dailyCustomers) ? r.dailyCustomers : null }));
+  }
+
   return {
+    salesByMonth, recentSales,
     TRAIN_TYPES, PAYMENT_TYPES, STATUSES, PAY_STATUS,
     defaultPriceFor, chargeOf, trainsGiven, trainsWaiting, trainsOwed, signedTrainAmount, buildLedger, ledgerForEmployee, allLedgers,
     describeLedgerError, paidInFullPayment, sortedSalaryHistory, currentSalary, employmentEnd, isCurrentStaff,

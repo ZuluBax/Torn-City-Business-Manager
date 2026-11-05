@@ -164,3 +164,23 @@ test('trains given: old records count as given, waiting is tracked separately fr
   assert.deepEqual([owed.trains, owed.employees], [7, 2]);
   assert.equal(C.trainsGiven(train('t4', '2026-01-04', 2, 1, { trainsGiven: 9 })), 2, 'clamped to the record');
 });
+
+test('sales add up per calendar month, skipping days with no number', () => {
+  const log = [
+    { date: '2026-10-30', dailyIncome: 100, dailyCustomers: null },
+    { date: '2026-10-31', dailyIncome: 200 },
+    { date: '2026-11-01', dailyIncome: 50, dailyCustomers: 7 },
+    { date: '2026-11-02', dailyIncome: null, dailyCustomers: 3 },
+    { date: 'bad', dailyIncome: 999 },
+    { date: '2026-09-01', dailyIncome: null },
+  ];
+  assert.deepEqual(C.salesByMonth(log), [
+    { month: '2026-11', income: 50, incomeDays: 1, customers: 10, customerDays: 2 },
+    { month: '2026-10', income: 300, incomeDays: 2, customers: 0, customerDays: 0 },
+  ]);
+  assert.deepEqual(C.salesByMonth(null), []);
+  assert.deepEqual(C.recentSales(log, 2), [
+    { date: '2026-11-02', income: null, customers: 3 },
+    { date: '2026-11-01', income: 50, customers: 7 },
+  ]);
+});

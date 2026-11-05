@@ -261,6 +261,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 input[type="date"] { color-scheme: inherit; }
 input::placeholder, textarea::placeholder { color: var(--muted); }
 select:disabled, input:disabled { opacity: 0.55; }
+/* Compact control inside a table cell (e.g. the chosen-job picker); arrow re-centred for the shorter height. */
+select.input-sm { height: 30px; font-size: 0.85rem; padding: 0 28px 0 9px; background-position: calc(100% - 15px) 12px, calc(100% - 10px) 12px; }
+.inline-field { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; }
 
 .result-count { font-size: 0.82rem; color: var(--muted); margin: 0 0 8px; }
 
@@ -434,6 +437,7 @@ select:disabled, input:disabled { opacity: 0.55; }
 .inline-add .field { flex: 1; }
 
 .kv-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sub-heading { margin: 18px 0 8px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- Rearrangeable dashboard ---------- */
 

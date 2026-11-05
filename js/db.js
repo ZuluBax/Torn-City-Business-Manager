@@ -9,7 +9,10 @@
 (function (DMB) {
   'use strict';
 
-  const DB_NAME = 'dukes-music-box';
+  const DB_NAME = 'torn-company-manager';
+  // Name used before the rename. Its data is copied across once (copyLegacyIfEmpty) and the
+  // old database is left in place untouched, as a fallback.
+  const LEGACY_DB_NAME = 'dukes-music-box';
   const DB_VERSION = 3; // v2: added tornEvents; v3: added effectivenessLog
   const RECORD_STORES = ['employees', 'training', 'payments', 'expenses', 'income', 'activity', 'tornEvents', 'effectivenessLog'];
   const ALL_STORES = [...RECORD_STORES, 'settings'];
@@ -70,6 +73,41 @@
       req.onerror = () => reject(req.error);
       req.onblocked = () => reject(new Error('Database is blocked — close other tabs running this app and reload.'));
     });
+  }
+
+  // Opens the old database only if it already exists: aborting the upgrade stops the browser
+  // from creating an empty one just because we looked. Resolves null when there isn't one.
+  function openLegacy() {
+    return new Promise((resolve) => {
+      const req = indexedDB.open(LEGACY_DB_NAME);
+      req.onupgradeneeded = () => req.transaction.abort();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    });
+  }
+
+  // First run under the new name: copy everything from the old database in one transaction,
+  // so a failure leaves the new one empty and the copy is simply tried again next load.
+  async function copyLegacyIfEmpty(d) {
+    const check = d.transaction(['settings', 'employees'], 'readonly');
+    const [settingsCount, employeeCount] = await Promise.all([
+      promisify(check.objectStore('settings').count()), promisify(check.objectStore('employees').count()),
+    ]);
+    if (settingsCount || employeeCount) return;
+    const old = await openLegacy();
+    if (!old) return;
+    try {
+      const stores = ALL_STORES.filter((s) => old.objectStoreNames.contains(s));
+      if (!stores.length) return;
+      const rtx = old.transaction(stores, 'readonly');
+      const rows = await Promise.all(stores.map((s) => promisify(rtx.objectStore(s).getAll())));
+      const wtx = d.transaction(stores, 'readwrite');
+      stores.forEach((s, i) => rows[i].forEach((r) => wtx.objectStore(s).put(r)));
+      await txDone(wtx);
+    } finally {
+      old.close();
+    }
   }
 
   // ---------- Server mode (app opened from the Pi) ----------
@@ -156,6 +194,7 @@
     db = await open();
     // Another tab upgrading the schema would otherwise hang behind our open connection.
     db.onversionchange = () => { db.close(); location.reload(); };
+    await copyLegacyIfEmpty(db);
     await loadAll();
     if (navigator.storage && navigator.storage.persist) {
       // Ask the browser not to evict our data under storage pressure. Best-effort only.

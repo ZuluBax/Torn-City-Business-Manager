@@ -129,23 +129,49 @@
    * lands in the hardest job they meet that still has room. Who holds a job today is ignored
    * on purpose: the user's rule is that the strongest person gets it.
    */
+  // The job the user picked for this person, if their stats still meet it; else null.
+  function validChoice(e) {
+    const job = findJob(e && e.chosenJob);
+    const stats = parseStats(e && e.workingStats);
+    return job && stats && meets(stats, job) ? job.name : null;
+  }
+
+  /*
+   * Chosen jobs (employee.chosenJob, set by the user) are placed before anything else and use
+   * up that job's limit, even past it: the user's pick beats the automatic rule. A choice the
+   * person no longer meets is ignored and reported as `staleChoice` so the page can warn.
+   * Entries also carry `chosen: true` when the job came from the user's pick.
+   */
   function suggestJobs(employees, limits) {
     const lim = limits || {};
     const out = new Map();
     let left = (employees || []).filter((e) => e && parseStats(e.workingStats));
     const lostTo = new Map(left.map((e) => [e.id, []]));
+    const used = {};
+    for (const e of left) {
+      const job = validChoice(e);
+      if (!job) continue;
+      used[job] = (used[job] || 0) + 1;
+      out.set(e.id, { job, lostTo: [], chosen: true });
+    }
+    left = left.filter((e) => !out.has(e.id));
     for (const job of [...JOBS].reverse()) {
       const ranked = rankForJob(left, job.name).map((r) => r.employee);
       const limited = Number.isInteger(lim[job.name]);
-      const placed = limited ? ranked.slice(0, lim[job.name]) : ranked;
-      // With a limit of 0 nobody "lost" to a person, so there's nothing useful to report.
-      if (placed.length) for (const e of ranked.slice(placed.length)) lostTo.get(e.id).push({ job: job.name, takenBy: placed });
+      const placed = limited ? ranked.slice(0, Math.max(0, lim[job.name] - (used[job.name] || 0))) : ranked;
+      // Whoever holds the job: chosen people first, then those placed here. With nobody in it
+      // (e.g. a limit of 0) there's no one they "lost" to, so nothing useful to report.
+      const holders = [...(employees || []).filter((e) => out.get(e && e.id)?.chosen && out.get(e.id).job === job.name), ...placed];
+      if (holders.length) for (const e of ranked.slice(placed.length)) lostTo.get(e.id).push({ job: job.name, takenBy: holders });
       for (const e of placed) out.set(e.id, { job: job.name, lostTo: lostTo.get(e.id) });
       left = left.filter((e) => !placed.includes(e));
     }
     for (const e of left) out.set(e.id, { job: null, lostTo: lostTo.get(e.id) });
+    for (const e of employees || []) {
+      if (e && e.chosenJob && out.has(e.id) && !out.get(e.id).chosen) out.get(e.id).staleChoice = e.chosenJob;
+    }
     return out;
   }
 
-  return { JOBS, STAT_KEYS, DEFAULT_LIMITS, parseStats, findJob, shortfall, meets, trainsToMeet, jobFit, rankForJob, cleanLimits, suggestJobs };
+  return { JOBS, STAT_KEYS, DEFAULT_LIMITS, parseStats, findJob, shortfall, meets, trainsToMeet, jobFit, rankForJob, cleanLimits, suggestJobs, validChoice };
 });

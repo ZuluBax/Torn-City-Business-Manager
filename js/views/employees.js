@@ -21,6 +21,17 @@
     if (e.status === 'left') return '<span class="muted" title="Has left, so no job is suggested.">—</span>';
     const tag = (tone, text, title) => `<span class="badge badge-${tone}" title="${esc(title)}">${esc(text)}</span>`;
     const sug = sugs.get(e.id) || { job: null, lostTo: [] };
+    if (sug.chosen) {
+      return sug.job === e.position
+        ? tag('green', 'Right job', 'The job you chose for them, and their stats meet it.')
+        : tag('blue', `Move to ${sug.job}`, `You chose ${sug.job} for them; on Torn they're still in ${e.position}.`);
+    }
+    // A pick they no longer meet is ignored; say so first so it isn't silently lost.
+    const stale = sug.staleChoice ? `${tag('amber', 'Chosen job no longer fits', `You chose ${sug.staleChoice}, but their stats no longer meet it, so the automatic suggestion is shown instead.`)} ` : '';
+    return stale + autoFitBadge(e, fit, sug, tag);
+  }
+
+  function autoFitBadge(e, fit, sug, tag) {
     const why = sug.lostTo.length ? ` ${lostText(sug.lostTo)}.` : '';
     const target = sug.job ? `Suggest ${sug.job}` : 'No open job fits';
     if (fit.current && !fit.current.meets) return tag('amber', `Below stats · ${target}`, `Short of ${fit.current.job} by ${shortText(fit.current.short)}${trainsText(fit.current.trains)}.${why}`);
@@ -31,10 +42,33 @@
   }
 
   // Bold when it differs from their job now, so moves stand out in the list.
+  // Someone who meets two or more jobs gets a picker, so you can choose which one they do.
   function suggestedCell(e, sugs) {
     const sug = e.status !== 'left' && sugs.get(e.id);
+    if (sug) {
+      const picker = chosenJobPicker(e, sug);
+      if (picker) return picker;
+    }
     if (!sug || !sug.job) return '<span class="muted">—</span>';
     return sug.job === e.position ? esc(sug.job) : `<strong>${esc(sug.job)}</strong>`;
+  }
+
+  // '' when there's nothing to choose between (fewer than two jobs met).
+  function chosenJobPicker(e, sug) {
+    const fit = J.jobFit(e);
+    if (!fit || fit.qualifies.length < 2) return '';
+    const chosen = sug.chosen ? sug.job : '';
+    const auto = sug.chosen ? 'Automatic' : `Automatic (${sug.job || 'none'})`;
+    const opts = [`<option value=""${chosen ? '' : ' selected'}>${esc(auto)}</option>`]
+      .concat([...fit.qualifies].reverse().map((j) => `<option value="${esc(j)}"${j === chosen ? ' selected' : ''}>${esc(j)}</option>`));
+    return `<select class="input-sm" data-chosen-job="${esc(e.id)}" aria-label="Chosen job for ${esc(e.name)}" title="Their stats meet ${fit.qualifies.length} jobs. Pick the one they should do.">${opts.join('')}</select>`;
+  }
+
+  function bindChosenJobPickers(root) {
+    root.querySelectorAll('[data-chosen-job]').forEach((sel) => sel.addEventListener('change', () => {
+      const e = db.get('employees', sel.dataset.chosenJob);
+      ui.runAction(() => S.setChosenJob(sel.dataset.chosenJob, sel.value), sel.value ? `${e ? e.name : 'Employee'}: chosen job ${sel.value}` : 'Back to automatic');
+    }));
   }
 
   function effectivenessText(tornId) {
@@ -60,6 +94,8 @@
     const lines = [jobFitBadge(e, sugs)];
     if (fit.current && !fit.current.meets) lines.push(`Short of ${esc(fit.current.job)} by ${esc(shortText(fit.current.short))}${esc(trainsText(fit.current.trains))}.`);
     lines.push(fit.qualifies.length ? `Stats meet: ${fit.qualifies.map(esc).join(', ')}.` : 'Stats don\'t meet any Music Store job yet.');
+    const picker = e.status !== 'left' && sug ? chosenJobPicker(e, sug) : '';
+    if (picker) lines.push(`<label class="inline-field">Chosen job ${picker}</label>`);
     if (sug && sug.lostTo.length) lines.push(`${esc(lostText(sug.lostTo))} (stronger stats).`);
     return `${lines.join('<br>')}<br><span class="small muted">Based on Torn's recommended stats and your job limits in Settings.</span>`;
   }
@@ -88,6 +124,7 @@
         { label: 'Job fit', render: (r) => jobFitBadge(r.employee, sugs) },
       ],
     });
+    bindChosenJobPickers(el.querySelector('[data-best]'));
   }
 
   // Kept at module level so filters survive re-renders when data changes.
@@ -133,7 +170,14 @@
       target.querySelector('[data-add]').addEventListener('click', () => F.employeeForm());
       return;
     }
-    target.innerHTML = `<p class="result-count">${rows.length} of ${data.employees.length} employees</p>` + ui.table({
+    // The total follows the default "Active + Inactive" view, so staff who have left (kept only
+    // for their money history) don't inflate it; a note says how many are hidden.
+    const leftCount = data.employees.filter((e) => e.status === 'left').length;
+    const showingCurrent = filters.status === 'current';
+    const total = showingCurrent ? data.employees.length - leftCount : data.employees.length;
+    const hiddenNote = showingCurrent && leftCount
+      ? ` <span class="muted">· ${leftCount} who left are hidden (choose “Left” in the status filter to see them)</span>` : '';
+    target.innerHTML = `<p class="result-count">${rows.length} of ${total} ${showingCurrent ? 'current ' : ''}employees${hiddenNote}</p>` + ui.table({
       empty: 'No employees match these filters.',
       rows,
       columns: [
@@ -155,6 +199,7 @@
       ],
     });
     target.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => F.employeeForm(b.dataset.edit)));
+    bindChosenJobPickers(target);
   }
 
   function renderList(el) {
@@ -268,7 +313,8 @@
           { label: 'Notes', cls: 'notes', render: (t) => esc(t.notes) },
           { label: '', cls: 'actions', render: (t) => `
             ${ledger.rows.get(t.id).outstanding ? `<button type="button" class="icon-btn" data-pay-training="${esc(t.id)}" title="Record payment for this" aria-label="Record payment">${ui.icon('cash')}</button>` : ''}
-            <button type="button" class="icon-btn" data-edit-training="${esc(t.id)}" title="Edit" aria-label="Edit">${ui.icon('edit')}</button>` },
+            <button type="button" class="icon-btn" data-edit-training="${esc(t.id)}" title="Edit" aria-label="Edit">${ui.icon('edit')}</button>
+            <button type="button" class="icon-btn icon-danger" data-del-training="${esc(t.id)}" title="Delete (e.g. they never paid)" aria-label="Delete">${ui.icon('trash')}</button>` },
         ],
       }))}
 
@@ -319,6 +365,8 @@
       if (ok && await ui.runAction(() => S.deleteEmployee(id), 'Employee deleted')) location.hash = '#/employees';
     });
     el.querySelectorAll('[data-edit-training]').forEach((b) => b.addEventListener('click', () => F.trainingForm(b.dataset.editTraining)));
+    bindChosenJobPickers(el);
+    el.querySelectorAll('[data-del-training]').forEach((b) => b.addEventListener('click', () => F.confirmDeleteTraining(b.dataset.delTraining)));
     el.querySelectorAll('[data-pay-training]').forEach((b) => b.addEventListener('click', () => F.paymentForm(null, { employeeId: id, trainingId: b.dataset.payTraining })));
     el.querySelectorAll('[data-edit-payment]').forEach((b) => b.addEventListener('click', () => F.paymentForm(b.dataset.editPayment)));
   }

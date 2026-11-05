@@ -6,12 +6,12 @@ Wants=network-online.target
 # __USER__, __HOME__ and __PORT__ are filled in by deploy.sh from deploy/pi.env.
 [Service]
 User=__USER__
-WorkingDirectory=__HOME__/dukes-music-box/app
-ExecStart=/usr/bin/python3 __HOME__/dukes-music-box/app/server/server.py --port __PORT__
+WorkingDirectory=__HOME__/torn-company-manager/app
+ExecStart=/usr/bin/python3 __HOME__/torn-company-manager/app/server/server.py --port __PORT__
 Restart=always
 RestartSec=5
 # Data and backups live outside app/ so a deploy or rollback never touches them.
-ReadWritePaths=__HOME__/dukes-music-box/data __HOME__/dukes-music-box/backups
+ReadWritePaths=__HOME__/torn-company-manager/data __HOME__/torn-company-manager/backups
 ProtectSystem=strict
 NoNewPrivileges=true
 PrivateTmp=true

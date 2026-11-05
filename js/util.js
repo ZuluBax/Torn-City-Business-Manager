@@ -153,7 +153,7 @@
     return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   }
 
-  // "Duke's Music Box" -> "dukes-music-box", for file names.
+  // "Your Business Name Here" -> "your-business-name-here", for file names.
   function slugify(s) {
     const slug = String(s || '').toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
     return slug || 'company';

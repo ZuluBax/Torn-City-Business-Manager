@@ -52,8 +52,18 @@ STATS_REFRESH_TCT = (18, 11)
 # Mirror of LOG_SKIP_FROM / LOG_DAY_STARTS in js/torn.js (minutes past midnight TCT).
 LOG_SKIP_FROM, LOG_DAY_STARTS = 18 * 60, 18 * 60 + 11
 BACKUPS_KEPT = 5  # one per day, so this is days of history; each file is ~80 KB
+# Names on disk. deploy.sh renames files from the old "dukes" names to these, so pruning by
+# BACKUP_PREFIX keeps covering every backup.
+APP_DIR_NAME = "torn-company-manager"
+DB_FILE = "company.db"
+BACKUP_PREFIX = "company-"
 
-log = logging.getLogger("dukes")
+
+def backup_path(folder: Path) -> Path:
+    """Today's backup file, e.g. backups/company-2026-11-05.db."""
+    return folder / f"{BACKUP_PREFIX}{date.today().isoformat()}.db"
+
+log = logging.getLogger("torn-company-manager")
 
 
 class Store:
@@ -212,14 +222,17 @@ class Store:
         employees = (snapshot or {}).get("effectiveness") or {}
         if not day or not employees:
             return False
-        income = snapshot.get("dailyIncome")
+        def number(v):
+            return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
         entry = {"id": day, "date": day, "takenAt": datetime.fromtimestamp(ts, timezone.utc).isoformat().replace("+00:00", "Z"),
-                 "dailyIncome": income if isinstance(income, (int, float)) and not isinstance(income, bool) else None,
+                 "dailyIncome": number(snapshot.get("dailyIncome")),
+                 "dailyCustomers": number(snapshot.get("dailyCustomers")),
                  "employees": employees}
         with self.lock:
             row = self.db.execute("SELECT json FROM records WHERE store='effectivenessLog' AND id=?", (day,)).fetchone()
             old = json.loads(row[0]) if row else None
-            if old and old.get("dailyIncome") == entry["dailyIncome"] and old.get("employees") == employees:
+            if (old and old.get("dailyIncome") == entry["dailyIncome"] and old.get("dailyCustomers") == entry["dailyCustomers"]
+                    and old.get("employees") == employees):
                 return False
             self.db.execute("BEGIN IMMEDIATE")
             try:
@@ -260,12 +273,12 @@ class Store:
 
     def backup(self, folder: Path) -> Path:
         folder.mkdir(parents=True, exist_ok=True)
-        target = folder / f"dukes-{date.today().isoformat()}.db"
+        target = backup_path(folder)
         with self.lock:
             dest = sqlite3.connect(target)
             self.db.backup(dest)
             dest.close()
-        for old in sorted(folder.glob("dukes-*.db"))[:-BACKUPS_KEPT]:
+        for old in sorted(folder.glob(f"{BACKUP_PREFIX}*.db"))[:-BACKUPS_KEPT]:
             old.unlink()
         return target
 
@@ -382,6 +395,7 @@ def snapshot_from_torn(data: dict) -> dict:
         "id": c.get("ID"), "name": c.get("name"), "rating": c.get("rating"),
         "employeesHired": c.get("employees_hired"), "employeesCapacity": c.get("employees_capacity"),
         "dailyIncome": c.get("daily_income"), "weeklyIncome": c.get("weekly_income"), "daysOld": c.get("days_old"),
+        "dailyCustomers": c.get("daily_customers"), "weeklyCustomers": c.get("weekly_customers"),
         "funds": d.get("company_funds"), "trainsAvailable": d.get("trains_available"),
         "advertisingBudget": d.get("advertising_budget"), "popularity": d.get("popularity"),
         "efficiency": d.get("efficiency"), "environment": d.get("environment"),
@@ -443,7 +457,7 @@ def background_loop(store: Store, backup_dir: Path, stop: threading.Event):
             if retried_events:
                 log.info("Torn events: rate limited, retrying in %ds", RATE_LIMIT_RETRY_SECONDS)
         try:
-            if not (backup_dir / f"dukes-{date.today().isoformat()}.db").exists():
+            if not backup_path(backup_dir).exists():
                 log.info("daily backup written: %s", store.backup(backup_dir).name)
         except Exception:
             log.exception("backup failed")
@@ -477,7 +491,7 @@ def make_handler(store: Store, app_dir: Path):
     app_dir = app_dir.resolve()
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "DukesMusicBox/1"
+        server_version = "TornCompanyManager/1"
 
         def log_message(self, fmt, *args):
             # Only log failed requests (args = requestline, status, size). Never logs bodies.
@@ -595,8 +609,8 @@ def main():
     p.add_argument("--host", default="0.0.0.0")
     p.add_argument("--port", type=int, default=8010)
     p.add_argument("--app-dir", type=Path, default=here.parent, help="folder containing index.html")
-    p.add_argument("--data-dir", type=Path, default=Path.home() / "dukes-music-box" / "data")
-    p.add_argument("--backup-dir", type=Path, default=Path.home() / "dukes-music-box" / "backups")
+    p.add_argument("--data-dir", type=Path, default=Path.home() / APP_DIR_NAME / "data")
+    p.add_argument("--backup-dir", type=Path, default=Path.home() / APP_DIR_NAME / "backups")
     p.add_argument("--no-background", action="store_true", help="disable background Torn refresh and daily backups (tests)")
     args = p.parse_args()
 
@@ -604,7 +618,7 @@ def main():
     mimetypes.add_type("application/javascript", ".js")
     mimetypes.add_type("image/svg+xml", ".svg")
 
-    store = Store(args.data_dir / "dukes.db")
+    store = Store(args.data_dir / DB_FILE)
     stop = threading.Event()
     if not args.no_background:
         threading.Thread(target=background_loop, args=(store, args.backup_dir, stop), daemon=True).start()

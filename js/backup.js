@@ -2,15 +2,17 @@
  * Backup export/import, demo data and full reset.
  *
  * Backup file format (JSON):
- *   { app: 'dukes-music-box', backupVersion: 1, exportedAt, data: { settings, employees, ... } }
+ *   { app: 'torn-company-manager', backupVersion: 1, exportedAt, data: { settings, employees, ... } }
  * `backupVersion` lets a future version migrate older files in migrate() before importing.
  */
 (function (DMB) {
   'use strict';
   const U = DMB.util, C = DMB.calc, db = DMB.db;
 
-  // Internal format tag (not shown to users). Never change it: old backups would be rejected.
-  const APP_ID = 'dukes-music-box';
+  // Internal format tag (not shown to users). Files made before the rename carry the old tag,
+  // so both are accepted on import; never drop an entry from ACCEPTED_APP_IDS.
+  const APP_ID = 'torn-company-manager';
+  const ACCEPTED_APP_IDS = [APP_ID, 'dukes-music-box'];
   const BACKUP_VERSION = 1;
   const MAX_IMPORT_BYTES = 50 * 1024 * 1024;
 
@@ -33,7 +35,7 @@
   // Throws a readable Error describing the first problem found. Checks structure and the
   // links between records, then re-runs every ledger so a corrupted file can't be imported.
   function validate(raw) {
-    if (!isObj(raw) || raw.app !== APP_ID) throw new Error('This is not a backup file from this app.');
+    if (!isObj(raw) || !ACCEPTED_APP_IDS.includes(raw.app)) throw new Error('This is not a backup file from this app.');
     if (!Number.isInteger(raw.backupVersion) || raw.backupVersion < 1) throw new Error('Backup version is missing or invalid.');
     if (raw.backupVersion > BACKUP_VERSION) throw new Error('This backup was made by a newer version of the app. Update the app first.');
     const b = migrate(raw);

@@ -96,7 +96,12 @@ test('effectiveness log date follows the 18:11 TCT tick and skips the window aro
 test('effectiveness log entry is keyed by Torn day and compares without takenAt', () => {
   const snap = { dailyIncome: 120000, effectiveness: { 111: { total: 100, addiction: -5 } } };
   const a = T.effectivenessLogEntry(snap, Date.parse('2026-10-17T18:11:30Z'));
-  assert.deepEqual(a, { id: '2026-10-17', date: '2026-10-17', takenAt: '2026-10-17T18:11:30.000Z', dailyIncome: 120000, employees: snap.effectiveness });
+  assert.deepEqual(a, { id: '2026-10-17', date: '2026-10-17', takenAt: '2026-10-17T18:11:30.000Z', dailyIncome: 120000, dailyCustomers: null, employees: snap.effectiveness });
+  const withCustomers = T.effectivenessLogEntry({ ...snap, dailyCustomers: 42 }, Date.parse('2026-10-17T19:00:00Z'));
+  assert.equal(withCustomers.dailyCustomers, 42);
+  assert.ok(!T.sameLogEntry(a, withCustomers), 'a new customer count is a change');
+  const { dailyCustomers, ...oldRow } = a;
+  assert.ok(T.sameLogEntry(oldRow, a), 'an old row without customers equals a reading with none');
   const b = T.effectivenessLogEntry(snap, Date.parse('2026-10-17T21:00:00Z'));
   assert.equal(b.id, a.id);
   assert.ok(T.sameLogEntry(a, b));

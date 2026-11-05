@@ -148,3 +148,22 @@ test('cleanLimits: blanks mean no limit, bad numbers are errors, unknown jobs ar
   assert.deepEqual(Object.keys(bad.errors).sort(), ['Bookkeeper', 'Cleaner', 'Musician', 'Trainer']);
   assert.deepEqual(J.cleanLimits(undefined), { limits: {}, errors: {} });
 });
+
+test('suggestJobs: a chosen job is kept, uses up the limit, and stale choices are flagged', () => {
+  const p = (id, stats, chosenJob) => ({ id, name: id, position: 'Sales Apprentice', workingStats: stats, chosenJob });
+  // Both meet Supervisor (limit 1) and Musician; Strong would win Musician automatically.
+  const strong = p('Strong', 'MAN 9000 / INT 20000 / END 20000');
+  const picky = p('Picky', 'MAN 5000 / INT 10000 / END 8000', 'Supervisor');
+  const fallen = p('Fallen', 'MAN 10 / INT 600 / END 1200', 'Trainer'); // no longer meets Trainer
+  const m = J.suggestJobs([strong, picky, fallen], { Supervisor: 1, Trainer: 1 });
+  assert.deepEqual(m.get('Picky'), { job: 'Supervisor', lostTo: [], chosen: true });
+  assert.equal(m.get('Strong').job, 'Trainer');
+  assert.equal(m.get('Fallen').job, 'Sales Apprentice');
+  assert.equal(m.get('Fallen').staleChoice, 'Trainer');
+  // Someone who'd otherwise get Supervisor loses it to the chosen holder.
+  const other = p('Other', 'MAN 10 / INT 4000 / END 7500');
+  const m2 = J.suggestJobs([picky, other], { Supervisor: 1 });
+  assert.equal(m2.get('Other').job, 'Bookkeeper');
+  assert.deepEqual(m2.get('Other').lostTo.map((l) => [l.job, l.takenBy.map((x) => x.id)]), [['Supervisor', ['Picky']]]);
+  assert.equal(J.validChoice({ chosenJob: 'Not a job', workingStats: strong.workingStats }), null);
+});

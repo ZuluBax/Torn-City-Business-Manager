@@ -146,6 +146,22 @@
     return saveEmployee(input, id);
   }
 
+  // '' = back to automatic. Only a job their stats meet can be chosen, so a pick is never
+  // silently ignored straight after saving it.
+  async function setChosenJob(id, jobName) {
+    const e = db.get('employees', id);
+    if (!e) throw new ValidationError({ _form: 'That employee no longer exists.' });
+    const name = str(jobName);
+    const chosenJob = name ? (DMB.jobs.findJob(name) || {}).name || null : null;
+    if (name && !DMB.jobs.validChoice({ ...e, chosenJob })) throw new ValidationError({ _form: `${e.name}'s stats don't meet ${name}.` });
+    if ((e.chosenJob || null) === chosenJob) return e;
+    const rec = { ...e, chosenJob, updatedAt: now() };
+    await db.commit([{ store: 'employees', put: rec }], {
+      type: 'employee_updated', message: chosenJob ? `Chosen job for ${e.name}: ${chosenJob}` : `Chosen job for ${e.name} set back to automatic`,
+    });
+    return rec;
+  }
+
   function employeeHasRecords(id) {
     return db.all('training').some((t) => t.employeeId === id) || db.all('payments').some((p) => p.employeeId === id);
   }
@@ -454,7 +470,11 @@
       const e = db.get('employees', u.id);
       if (!e) continue;
       const rec = { ...e, updatedAt: now() };
-      if (u.changes.position) rec.position = u.changes.position.to;
+      if (u.changes.position) {
+        rec.position = u.changes.position.to;
+        // Moved on Torn to a different job than the one chosen here: Torn wins, drop the choice.
+        if (rec.chosenJob && rec.chosenJob !== rec.position) rec.chosenJob = null;
+      }
       if (u.changes.workingStats) rec.workingStats = u.changes.workingStats.to;
       if (u.changes.status) { rec.status = 'active'; rec.endDate = null; }
       if (u.changes.wage) {
@@ -588,7 +608,7 @@
     processTornEvents, addTornEvents, resolveTornEvent,
     applyTornImport,
     ValidationError,
-    saveEmployee, setEmployeeStatus, deleteEmployee, employeeHasRecords,
+    saveEmployee, setEmployeeStatus, setChosenJob, deleteEmployee, employeeHasRecords,
     saveTraining, markTrainsGiven, deleteTraining,
     savePayment, deletePayment,
     saveExpense: makeLedgerEntrySaver('expenses', 'expense'),

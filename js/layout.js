@@ -21,7 +21,7 @@
     { id: 'active', span: 1 }, { id: 'dailySalary', span: 1 }, { id: 'trainsSold', span: 1 }, { id: 'trainRevenue', span: 1 },
     { id: 'outstanding', span: 1 }, { id: 'totalSalary', span: 1 }, { id: 'netProfit', span: 1 }, { id: 'trainPrice', span: 1 },
     { id: 'trainsOwed', span: 1 },
-    { id: 'torn', span: 4 }, { id: 'financial', span: 2 }, { id: 'training', span: 2 },
+    { id: 'torn', span: 4 }, { id: 'sales', span: 4 }, { id: 'financial', span: 2 }, { id: 'training', span: 2 },
     { id: 'owing', span: 4 }, { id: 'overview', span: 4 }, { id: 'activity', span: 4 },
   ];
   const MIN_SPAN = (kind) => (kind === 'card' ? 1 : 2);

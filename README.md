@@ -53,14 +53,14 @@ passwordless `sudo` on the Pi, plus `python3` and `curl`. Then run `./deploy/dep
 open `http://your-pi.local:8010` on any device on your network.
 
 When the app is opened from the Pi, it stores data **on the Pi** (SQLite at
-`~/dukes-music-box/data/dukes.db`) instead of in the browser. Your PC, phone and tablet
+`~/torn-company-manager/data/company.db`) instead of in the browser. Your PC, phone and tablet
 then all see the same data. Opening `index.html` by double-click still works as before,
 but that copy keeps its own separate browser data.
 
 | What | Detail |
 |---|---|
-| Server | `server/server.py`. Uses only Python's standard library, so nothing to install. Runs as the systemd service `dukes-music-box` (the internal name, kept for compatibility) as your SSH user, on port 8010. It starts on boot and restarts if it crashes. |
-| Backups | A copy is saved to `~/dukes-music-box/backups/dukes-YYYY-MM-DD.db` every day, and the last 5 are kept (older ones are deleted automatically). |
+| Server | `server/server.py`. Uses only Python's standard library, so nothing to install. Runs as the systemd service `torn-company-manager` as your SSH user, on port 8010. It starts on boot and restarts if it crashes. |
+| Backups | A copy is saved to `~/torn-company-manager/backups/company-YYYY-MM-DD.db` every day, and the last 5 are kept (older ones are deleted automatically). |
 | Torn | The Pi holds the API key (browsers only see "a key is set"). It refreshes company funds, trains available, each employee's "last active" time, their working stats and their effectiveness/addiction every 15 minutes, plus an extra refresh at 18:11 TCT because Torn updates stats daily at 18:10. It also saves one effectiveness reading per Torn day (see "Effectiveness and addiction"). Position, wage and joins/leaves still need the import button, because they affect money. If Torn says "too many requests", it retries once a minute later. |
 | Several devices | Other devices pick up changes within about 15 seconds. If two devices edit at once, the later save is refused and the page refreshes, so nothing is overwritten by accident. |
 | Security | Home network only, with no login. Anyone on your Wi-Fi can open it. **Don't port-forward it.** For access away from home, use Tailscale. |
@@ -73,13 +73,19 @@ but that copy keeps its own separate browser data.
 ./deploy/deploy.sh --status    # service status, recent logs, latest backups
 ```
 
-Deploys only replace `~/dukes-music-box/app`. The `data/` and `backups/` folders are never
+Deploys only replace `~/torn-company-manager/app`. The `data/` and `backups/` folders are never
 touched.
 
+**Upgrading an older install:** older versions used the folder and service name
+`dukes-music-box`. The next deploy moves it to `torn-company-manager` once by itself (and
+renames `dukes*.db` files to `company*.db`). It leaves a full copy at
+`~/dukes-music-box.pre-rename`, which you can delete once everything looks right. You can't
+`--rollback` past that move.
+
 **Restore a nightly backup on the Pi:**
-`sudo systemctl stop dukes-music-box`, then copy the backup file over
-`~/dukes-music-box/data/dukes.db`, delete `dukes.db-wal` and `dukes.db-shm` if they exist,
-then `sudo systemctl start dukes-music-box`.
+`sudo systemctl stop torn-company-manager`, then copy the backup file over
+`~/torn-company-manager/data/company.db`, delete `company.db-wal` and `company.db-shm` if they exist,
+then `sudo systemctl start torn-company-manager`.
 
 **Move data from a browser to the Pi:** in the old copy, go to Settings → Export backup.
 Then open the Pi address and go to Settings → Import backup.
@@ -137,7 +143,7 @@ button. The import logic is in `js/torn.js` (`buildPlan` is pure and has unit te
 Your data lives **only in this browser's storage**. It is lost if you clear browsing data,
 reset the browser, or use a private/incognito window.
 
-- **Settings → Export backup** downloads `dukes-music-box-backup-YYYY-MM-DD.json` to your
+- **Settings → Export backup** downloads `your-company-name-backup-YYYY-MM-DD.json` to your
   Downloads folder. Copy it somewhere safe. The `backups/` folder here is a good place
   (the browser can't save there by itself).
 - **Settings → Import backup** checks the file, shows what's in it, asks you to confirm,
@@ -213,6 +219,14 @@ Bookkeeper, Supervisor and Trainer start at **1**. Leave a box empty for no limi
 3. A job with no limit takes everyone left who meets it.
 4. So each person is suggested the hardest job they meet that still has room.
 
+**Choosing the job yourself:** when someone's stats meet two or more jobs, the Suggested job
+column (and their profile) shows a dropdown. *Automatic* uses the rules above. Picking a job
+keeps them in it: it's placed before the automatic rules, counts toward that job's limit
+(even past it), and the badge reads *Right job* once Torn shows them in it. If their stats
+later drop below the chosen job, the app falls back to the automatic suggestion and shows
+*Chosen job no longer fits*. If Import from Torn finds them moved to a different job, the
+choice is cleared, because Torn wins.
+
 Staff who have left, and anyone without working stats, get no suggestion. Suggestions are
 advice only: the app never changes anyone's position for you. On the Pi, working stats
 refresh by themselves every 15 minutes and just after Torn's daily update (18:10 TCT).
@@ -249,6 +263,23 @@ Torn leaves out the addiction field when there's no penalty, so the app treats a
 value as 0. On the Pi the log is written by the background refresh. In the double-click
 copy it's only written when you press Import from Torn. History starts on 17 Oct 2026, the
 day this was added.
+
+---
+
+## Sales and customers (dashboard)
+
+The **Sales & customers** panel shows:
+- **Daily** and **weekly** sales and customers, straight from Torn. These are for the last
+  *finished* day and week, not today so far.
+- **This month** so far, plus a **Last 7 days** table and a **By month** table.
+
+Torn has no monthly figure, so months are added up from the daily log above. Each log row
+saves that day's `dailyIncome` and `dailyCustomers`. That means:
+- A day the app didn't log (Pi off, or no Torn key) isn't counted. The *Days logged* column
+  shows how complete each month is.
+- Sales history starts when the log did (17 Oct 2026). Customers start from the version that
+  added this panel.
+- A row is filed under the date it was read, so it holds the day that had just finished.
 
 ---
 
@@ -317,7 +348,7 @@ go, or nothing) → change event → the page re-draws using `calc` on the saved
 
 ---
 
-## Data model (IndexedDB database `dukes-music-box`)
+## Data model (IndexedDB database `torn-company-manager`)
 
 Every record has a random `id`, plus `createdAt` and `updatedAt` timestamps. Dates are
 stored as `YYYY-MM-DD` text. Money is stored in whole dollars. Records point to each
@@ -325,14 +356,14 @@ other by **id**, never by name. Demo records also have `isDemo: true`.
 
 | Store | Fields |
 |---|---|
-| `employees` | `name, tornId, position, status (active/inactive/left), startDate, endDate, reasonForLeaving, workingStats, notes, salaryHistory[{effectiveFrom, salaryPerDay}]` |
+| `employees` | `name, tornId, position, status (active/inactive/left), startDate, endDate, reasonForLeaving, workingStats, notes, chosenJob (null = automatic), salaryHistory[{effectiveFrom, salaryPerDay}]` |
 | `training` | `employeeId, date, trainCount, trainType (paid/free/director/other), pricePerTrain, totalAmount, notes` |
 | `payments` | `employeeId, trainingId (optional), date, amount, paymentType (train/other/refund), notes` |
 | `expenses` | `date, category, description, amount, notes` |
 | `income` | `date, category, description, amount, notes` |
 | `settings` | One record (`key: 'app'`): `companyName, currency, trainPrice, positions[], expenseCategories[], incomeCategories[], theme, jobLimits{jobName: maxPeople}` (a job missing from `jobLimits` has no limit) |
 | `activity` | `at, type, message`. Only the newest 300 are kept. |
-| `effectivenessLog` | One per Torn day, `id` = `date` (`YYYY-MM-DD`): `takenAt, dailyIncome, employees{tornId: {total, addiction}}`. Written by the app, not typed in. |
+| `effectivenessLog` | One per Torn day, `id` = `date` (`YYYY-MM-DD`): `takenAt, dailyIncome, dailyCustomers, employees{tornId: {total, addiction}}`. Written by the app, not typed in. |
 
 The latest effectiveness and "last active" figures live in `settings.tornCompany`
 (`effectiveness`, `lastActive`), not on the employee records, and are replaced on every

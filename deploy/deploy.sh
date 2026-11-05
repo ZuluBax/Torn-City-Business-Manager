@@ -15,14 +15,38 @@ cd "$(dirname "$0")/.."
 if [ -f deploy/pi.env ]; then set -a; . deploy/pi.env; set +a; fi
 : "${PI:?Set PI=user@host in deploy/pi.env (see deploy/pi.env.example)}"
 PORT="${PORT:-8010}"
-SERVICE=dukes-music-box
+SERVICE=torn-company-manager
+OLD_SERVICE=dukes-music-box   # pre-rename name; only used by migrate_old_install
 PI_USER="${PI%%@*}"
 PI_HOST="${PI#*@}"
 
 remote() { ssh -o BatchMode=yes "$PI" "$@"; }
 
 PI_HOME="$(remote 'printf %s "$HOME"')"
-BASE="$PI_HOME/dukes-music-box"
+BASE="$PI_HOME/$SERVICE"
+OLD_BASE="$PI_HOME/$OLD_SERVICE"
+
+# One-time move from the old "dukes-music-box" install (folder, service, dukes*.db files) to
+# the generic names. Runs only while the old folder exists and the new one doesn't, so later
+# deploys skip it. A full copy is left at $OLD_BASE.pre-rename for manual recovery.
+# The old app code is not kept as app.prev: it looks for dukes.db and would start on an
+# empty database, so --rollback can't go back past this point.
+migrate_old_install() {
+  remote "set -e
+    if [ -d $OLD_BASE ] && [ ! -e $BASE ]; then
+      echo 'One-time move: $OLD_SERVICE -> $SERVICE'
+      sudo systemctl stop $OLD_SERVICE 2>/dev/null || true
+      sudo systemctl disable $OLD_SERVICE >/dev/null 2>&1 || true
+      rm -rf $OLD_BASE.pre-rename && cp -a $OLD_BASE $OLD_BASE.pre-rename
+      mv $OLD_BASE $BASE
+      rm -rf $BASE/app $BASE/app.prev $BASE/app.failed $BASE/app.new
+      cd $BASE/data && for f in dukes.db dukes.db-wal dukes.db-shm; do if [ -e \$f ]; then mv \$f company\${f#dukes}; fi; done
+      cd $BASE/backups && for f in dukes-*.db; do if [ -e \$f ]; then mv \$f company-\${f#dukes-}; fi; done
+      sudo rm -f /etc/systemd/system/$OLD_SERVICE.service
+      sudo systemctl daemon-reload
+      echo 'Moved. Safety copy left at $OLD_BASE.pre-rename (delete it once happy).'
+    fi"
+}
 
 health() {
   remote "for i in 1 2 3 4 5 6 7 8 9 10; do curl -fsS -m 2 http://127.0.0.1:$PORT/api/health >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1"
@@ -41,6 +65,8 @@ esac
 
 echo "Running unit tests…"
 node --test tests/*.test.js >/dev/null || { echo "Unit tests failed — not deploying."; exit 1; }
+
+migrate_old_install
 
 echo "Uploading to $PI…"
 remote "mkdir -p $BASE/data $BASE/backups && rm -rf $BASE/app.new && mkdir -p $BASE/app.new"

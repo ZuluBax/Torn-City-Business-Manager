@@ -72,6 +72,7 @@
       id: c.ID, name: c.name, rating: c.rating,
       employeesHired: c.employees_hired, employeesCapacity: c.employees_capacity,
       dailyIncome: c.daily_income, weeklyIncome: c.weekly_income, daysOld: c.days_old,
+      dailyCustomers: c.daily_customers, weeklyCustomers: c.weekly_customers,
       funds: d.company_funds, trainsAvailable: d.trains_available, advertisingBudget: d.advertising_budget,
       popularity: d.popularity, efficiency: d.efficiency, environment: d.environment,
       lastActive: lastActiveMap(data.company_employees),
@@ -126,12 +127,15 @@
     return {
       id: date, date, takenAt: new Date(ms).toISOString(),
       dailyIncome: Number.isFinite(snapshot.dailyIncome) ? snapshot.dailyIncome : null,
+      dailyCustomers: Number.isFinite(snapshot.dailyCustomers) ? snapshot.dailyCustomers : null,
       employees: snapshot.effectiveness,
     };
   }
 
-  // takenAt is ignored, so a re-reading of the same numbers isn't a change.
-  const sameLogEntry = (a, b) => !!a && !!b && a.dailyIncome === b.dailyIncome && JSON.stringify(a.employees) === JSON.stringify(b.employees);
+  // takenAt is ignored, so a re-reading of the same numbers isn't a change. Rows logged before
+  // customers were tracked have no dailyCustomers; `?? null` makes that equal to "not known".
+  const sameLogEntry = (a, b) => !!a && !!b && a.dailyIncome === b.dailyIncome
+    && (a.dailyCustomers ?? null) === (b.dailyCustomers ?? null) && JSON.stringify(a.employees) === JSON.stringify(b.employees);
 
   /*
    * Setup spend = deposits − withdrawals − funds left. This only holds while the company has

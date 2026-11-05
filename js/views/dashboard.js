@@ -82,6 +82,7 @@
         <p class="small muted">As of ${esc(U.formatDateTime(s.tornCompany.fetchedAt))}.${db.mode === 'server' ? ' The Pi refreshes these every 15 minutes.' : ''}</p>`,
       { actions: `<button type="button" class="btn btn-sm btn-ghost" data-q="torn">${ui.icon('download')} Refresh from Torn</button>` }) };
     }
+    blocks.sales = { label: 'Sales & customers', html: ui.panel('Sales & customers', salesPanel(s.tornCompany)) };
     blocks.financial = { label: 'Financial summary', html: ui.panel('Financial summary', ui.barList([
       { label: 'Train revenue', value: fin.trainRevenue, tone: 'gold' },
       { label: 'Other income', value: fin.otherIncome + fin.otherEmployeePayments, tone: 'gold' },
@@ -174,6 +175,51 @@
     el.querySelector('[data-arrange-done]').addEventListener('click', toggle);
     el.querySelector('[data-reset-layout]').addEventListener('click', () => save(null, 'Layout reset'));
     bindArrange(el, layout, kinds);
+  }
+
+  // "2026-11" -> "November 2026"
+  const monthLabel = (ym) => new Date(`${ym}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const num = (n) => (Number.isFinite(n) ? U.formatNumber(n) : '<span class="muted">—</span>');
+  const cash = (n) => (Number.isFinite(n) ? ui.money(n) : '<span class="muted">—</span>');
+
+  // Daily and weekly come straight from Torn (last finished day / week). Torn has no monthly
+  // figure, so months are added up from the app's own daily log (see C.salesByMonth).
+  function salesPanel(tc) {
+    const log = db.all('effectivenessLog');
+    const months = C.salesByMonth(log);
+    const recent = C.recentSales(log, 7);
+    const thisMonth = months.find((m) => m.month === U.todayISO().slice(0, 7));
+    const daysNote = (m, key) => (m && m[key] ? ` (${m[key]} day${m[key] === 1 ? '' : 's'})` : '');
+    const top = tc ? `
+      <dl class="kv-grid kv-grid-4">
+        <div><dt>Daily sales</dt><dd>${cash(tc.dailyIncome)}</dd></div>
+        <div><dt>Daily customers</dt><dd>${num(tc.dailyCustomers)}</dd></div>
+        <div><dt>Weekly sales</dt><dd>${cash(tc.weeklyIncome)}</dd></div>
+        <div><dt>Weekly customers</dt><dd>${num(tc.weeklyCustomers)}</dd></div>
+        <div><dt>Sales this month</dt><dd>${cash(thisMonth ? thisMonth.income : 0)}<span class="small muted">${daysNote(thisMonth, 'incomeDays')}</span></dd></div>
+        <div><dt>Customers this month</dt><dd>${num(thisMonth ? thisMonth.customers : 0)}<span class="small muted">${daysNote(thisMonth, 'customerDays')}</span></dd></div>
+      </dl>` : '<p class="muted">Add your Torn API key in Settings to see sales and customers.</p>';
+    const daily = recent.length ? `<h3 class="sub-heading">Last ${recent.length} day${recent.length === 1 ? '' : 's'}</h3>` + ui.table({
+      rows: recent,
+      columns: [
+        { label: 'Day ending', render: (r) => U.formatDate(r.date) },
+        { label: 'Sales', align: 'right', render: (r) => cash(r.income) },
+        { label: 'Customers', align: 'right', render: (r) => num(r.customers) },
+      ],
+    }) : '';
+    const monthly = months.length ? `<h3 class="sub-heading">By month</h3>` + ui.table({
+      rows: months,
+      columns: [
+        { label: 'Month', render: (m) => esc(monthLabel(m.month)) },
+        { label: 'Total sales', align: 'right', render: (m) => ui.money(m.income) },
+        { label: 'Customers', align: 'right', render: (m) => (m.customerDays ? U.formatNumber(m.customers) : '<span class="muted">—</span>') },
+        { label: 'Days logged', align: 'right', render: (m) => m.incomeDays },
+      ],
+    }) : '';
+    const first = log.map((r) => r.date).filter(U.isISODate).sort()[0];
+    const since = first ? `, starting ${esc(U.formatDate(first))}` : '';
+    return `${top}${daily}${monthly}
+      <p class="small muted">Daily and weekly figures are Torn's, for the last finished day and week. Monthly totals add up the days this app logged${since}; a day the app missed isn't counted, and customers only count from when this version started logging them.</p>`;
   }
 
   function save(next, message) {
