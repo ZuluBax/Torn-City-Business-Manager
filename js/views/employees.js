@@ -43,9 +43,10 @@
 
   // Bold when it differs from their job now, so moves stand out in the list.
   // Someone who meets two or more jobs gets a picker, so you can choose which one they do.
-  function suggestedCell(e, sugs) {
+  // withPicker = false where the page shows the picker somewhere else (the profile's Job fit).
+  function suggestedCell(e, sugs, withPicker = true) {
     const sug = e.status !== 'left' && sugs.get(e.id);
-    if (sug) {
+    if (sug && withPicker) {
       const picker = chosenJobPicker(e, sug);
       if (picker) return picker;
     }
@@ -276,7 +277,7 @@
         ${ui.panel('Details', `
           <dl class="details">
             <dt>Job now</dt><dd>${esc(e.position)}</dd>
-            <dt>Suggested job</dt><dd>${suggestedCell(e, suggestions())}</dd>
+            <dt>Suggested job</dt><dd>${suggestedCell(e, suggestions(), false)}</dd>
             <dt>Salary / day</dt><dd>${ui.money(salary)}</dd>
             <dt>Start date</dt><dd>${U.formatDate(e.startDate)}</dd>
             <dt>End date</dt><dd>${e.endDate ? U.formatDate(e.endDate) : '<span class="muted">—</span>'}</dd>
