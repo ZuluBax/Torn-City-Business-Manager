@@ -31,11 +31,11 @@ Facts to remember:
 1. **Addiction vs income.** Once the daily log has a few more weeks (from about early
    December), compare employees' addiction against daily sales.
 
-## In progress (13 Nov 2026)
+## Shipped 13 Nov 2026
 
-- **Role advisor** (Employees page + Dashboard box): built and tested locally against a
-  read-only copy of the Pi's data. Not committed or deployed yet. Phone-width layout not
-  checked yet (the browser window couldn't be resized).
+- **Role advisor** (Employees page + Dashboard box): best fit, also-meets, closest two and
+  suggested moves per role. Deployed to the Pi. Phone-width layout not checked yet.
+- **Employees status filter:** "All statuses" removed; staff who left only show under "Left".
 
 ## Ideas (not started)
 
