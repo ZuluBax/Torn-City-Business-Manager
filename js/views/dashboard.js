@@ -126,6 +126,9 @@
         { label: 'Spent on trains', align: 'right', render: (r) => ui.money(r.st.charged) },
       ],
     }), { actions: '<a href="#/employees" class="link-sm">All employees →</a>' }) };
+    // Looked up at render time: employees.js loads after this file.
+    blocks.roles = { label: 'Role advisor', html: ui.panel('Role advisor', DMB.views.employees.roleAdvisorHtml({ compact: true }),
+      { actions: '<a href="#/employees" class="link-sm">By role →</a>' }) };
     blocks.activity = { label: 'Recent activity', html: ui.panel('Recent activity', db.all('activity').length
       ? `<ol class="activity">${db.all('activity').slice(0, 12).map((a) => `
         <li><span class="activity-icon">${ui.icon(ACTIVITY_ICONS[a.type] || 'clock')}</span>

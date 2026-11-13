@@ -31,7 +31,15 @@ Facts to remember:
 1. **Addiction vs income.** Once the daily log has a few more weeks (from about early
    December), compare employees' addiction against daily sales.
 
+## In progress (13 Nov 2026)
+
+- **Role advisor** (Employees page + Dashboard box): built and tested locally against a
+  read-only copy of the Pi's data. Not committed or deployed yet. Phone-width layout not
+  checked yet (the browser window couldn't be resized).
+
 ## Ideas (not started)
+
+- **Role advisor: weigh effectiveness/addiction** alongside stats, once there's enough log.
 
 - **Record actual salary payments** to compare against the estimate.
 - **Employment periods** for people who leave and come back. Today one start date covers it

@@ -128,6 +128,60 @@
     bindChosenJobPickers(el.querySelector('[data-best]'));
   }
 
+  // ---------- Role advisor: who suits which role, and who should move ----------
+
+  const needsText = (needs) => Object.entries(needs).map(([k, n]) => `${U.formatNumber(n)} ${k}`).join(' / ');
+  const people = (list, max) => {
+    if (!list.length) return '<span class="muted">—</span>';
+    const shown = list.slice(0, max).map((e) => ui.employeeLink(e.id)).join(', ');
+    return list.length > max ? `${shown} <span class="muted">+${list.length - max} more</span>` : shown;
+  };
+  const nearText = (c) => `${ui.employeeLink(c.employee.id)} <span class="small muted">${esc(shortText(c.short))} short${esc(trainsText(c.trains))}</span>`;
+
+  function movesHtml(advice) {
+    if (!advice.moves.length && !advice.stuck.length) return '<p class="muted">Everyone is already in the best job for their stats.</p>';
+    const items = advice.moves.map((m) => {
+      const tags = [
+        m.belowNow ? `<span class="badge badge-amber" title="Their stats are below what ${esc(m.from)} recommends.">Below stats now</span>` : '',
+        m.chosen ? '<span class="badge badge-blue" title="You picked this job for them.">Your choice</span>' : '',
+      ].filter(Boolean).join(' ');
+      return `<li>${ui.employeeLink(m.employee.id)}: ${esc(m.from)} → <strong>${esc(m.to)}</strong> ${tags}</li>`;
+    }).concat(advice.stuck.map((s) => `<li>${ui.employeeLink(s.employee.id)}: no job fits yet. <span class="small muted">${esc(shortText(s.short))} short of ${esc(s.job)}${esc(trainsText(s.trains))}</span></li>`));
+    return `<ul class="advice-list">${items.join('')}</ul>`;
+  }
+
+  /*
+   * compact = the dashboard summary (moves only); otherwise the full per-role table too.
+   * Same rules as the Suggested job column (J.adviseRoles builds on suggestJobs).
+   */
+  function roleAdvisorHtml({ compact = false } = {}) {
+    const staff = db.all('employees');
+    const advice = J.adviseRoles(staff, db.settings().jobLimits);
+    if (!staff.some((e) => e.status !== 'left' && J.parseStats(e.workingStats))) {
+      return '<p class="muted">No working stats yet. Import from Torn to fetch them, then this will show who suits each role.</p>';
+    }
+    const caveat = '<p class="small muted">Based on Torn\'s recommended stats and your job limits in Settings, using the latest working stats the app has. Train counts are rough (as if they train in that job). It doesn\'t weigh effectiveness or addiction, and nothing changes on Torn until you move people there.</p>';
+    const moves = `<h3 class="sub-heading">Suggested moves</h3>${movesHtml(advice)}`;
+    if (compact) return moves + caveat;
+    const table = `<h3 class="sub-heading">By role (hardest first)</h3>` + ui.table({
+      rows: advice.roles,
+      columns: [
+        { label: 'Role', render: (r) => `<strong>${esc(r.job)}</strong>${r.limit != null ? `<br><span class="small muted">Limit ${r.limit}</span>` : ''}` },
+        { label: 'Needs', render: (r) => `<span class="small">${esc(needsText(r.needs))}</span>` },
+        { label: 'Best fit', render: (r) => {
+          if (r.best.length) return people(r.best, 3);
+          // People who meet it went to other jobs (a harder one, or your pick): the role is open, not out of reach.
+          if (r.alsoMeets.length) return '<span class="badge badge-amber" title="Everyone who meets it is suggested for another job. Use a chosen job to put someone here.">Unfilled</span>';
+          return '<span class="badge badge-muted">Nobody qualifies yet</span>';
+        } },
+        { label: 'Also meets it', render: (r) => people(r.alsoMeets, 3) },
+        { label: 'Closest to it', render: (r) => (r.closest.length ? r.closest.map(nearText).join('<br>') : '<span class="muted">—</span>') },
+        { label: 'In it on Torn now', render: (r) => people(r.heldNow, 3) },
+      ],
+    });
+    return moves + table + caveat;
+  }
+
   // Kept at module level so filters survive re-renders when data changes.
   const filters = { q: '', status: 'current', position: '', sort: 'name' };
   const bestFor = { job: J.JOBS[0].name };
@@ -140,7 +194,8 @@
     // Least recently active first; anyone without Torn activity data sinks to the bottom.
     active: { label: 'Last active (longest ago)', fn: (a, b) => (a.activeAt || Number.MAX_SAFE_INTEGER) - (b.activeAt || Number.MAX_SAFE_INTEGER) },
   };
-  const STATUS_FILTERS = { current: 'Active + Inactive', '': 'All statuses', active: 'Active', inactive: 'Inactive', left: 'Left' };
+  // No "everyone" option on purpose: leavers only show when "Left" is picked.
+  const STATUS_FILTERS = { current: 'All current', active: 'Active', inactive: 'Inactive', left: 'Left' };
 
   // ---------- List ----------
 
@@ -148,8 +203,7 @@
     const q = filters.q.trim().toLowerCase();
     return data.employees
       .filter((e) => {
-        if (filters.status === 'current' && e.status === 'left') return false;
-        if (filters.status && filters.status !== 'current' && e.status !== filters.status) return false;
+        if (filters.status === 'current' ? e.status === 'left' : e.status !== filters.status) return false;
         if (filters.position && e.position !== filters.position) return false;
         if (q && !e.name.toLowerCase().includes(q) && !e.tornId.includes(q)) return false;
         return true;
@@ -171,14 +225,15 @@
       target.querySelector('[data-add]').addEventListener('click', () => F.employeeForm());
       return;
     }
-    // The total follows the default "Active + Inactive" view, so staff who have left (kept only
-    // for their money history) don't inflate it; a note says how many are hidden.
+    // Staff who have left are kept only for their money history, so they appear just under the
+    // "Left" filter and never inflate the current-staff count; a note says how many are hidden.
     const leftCount = data.employees.filter((e) => e.status === 'left').length;
-    const showingCurrent = filters.status === 'current';
-    const total = showingCurrent ? data.employees.length - leftCount : data.employees.length;
-    const hiddenNote = showingCurrent && leftCount
+    const showingLeft = filters.status === 'left';
+    const total = showingLeft ? leftCount : data.employees.length - leftCount;
+    const hiddenNote = !showingLeft && leftCount
       ? ` <span class="muted">· ${leftCount} who left are hidden (choose “Left” in the status filter to see them)</span>` : '';
-    target.innerHTML = `<p class="result-count">${rows.length} of ${total} ${showingCurrent ? 'current ' : ''}employees${hiddenNote}</p>` + ui.table({
+    const countText = showingLeft ? `${rows.length} of ${total} who left` : `${rows.length} of ${total} current employees${hiddenNote}`;
+    target.innerHTML = `<p class="result-count">${countText}</p>` + ui.table({
       empty: 'No employees match these filters.',
       rows,
       columns: [
@@ -216,6 +271,7 @@
         <select data-filter="sort" aria-label="Sort">${ui.options(Object.entries(SORTS).map(([value, o]) => ({ value, label: o.label })), filters.sort)}</select>
       </div>
       <div data-table></div>
+      ${ui.panel('Role advisor', roleAdvisorHtml(), { cls: 'panel-best' })}
       ${ui.panel('Best for each job', '<div data-best></div>', {
         cls: 'panel-best',
         actions: `<select data-best-job aria-label="Choose a job">${ui.options(J.JOBS.map((j) => j.name), bestFor.job)}</select>`,
@@ -396,5 +452,5 @@
   }
 
   DMB.views = DMB.views || {};
-  DMB.views.employees = { title: 'Employees', render };
+  DMB.views.employees = { title: 'Employees', render, roleAdvisorHtml };
 })(window.DMB = window.DMB || {});

@@ -198,6 +198,16 @@ Staff below the recommended stats can still work; they're just less efficient.
   Hover over it to see why, for example "Cleaner goes to Strongest1".
 - **Best for each job** panel (under the staff table): pick a job to see everyone who meets
   it, ranked by the main stat, then the second stat.
+- **Role advisor** panel (Employees page, and a short version on the Dashboard): answers "who
+  in the business suits which role?" in one place.
+  - *Suggested moves*: who should change job (hardest destination first), tagged *Below
+    stats now* or *Your choice*, plus anyone who meets no job yet and how far off they are.
+  - *By role* (Employees page only): for each job, the best fit, others who also meet it,
+    the two closest who don't yet (with the shortfall and rough trains), and who's in it on
+    Torn now. *Unfilled* means people meet the job but are suggested elsewhere (a harder
+    job or your chosen job); *Nobody qualifies yet* means nobody meets it.
+  - It uses exactly the same rules as the Suggested job column, so the two never disagree.
+    It doesn't weigh effectiveness or addiction.
 - Each profile shows the same details, including how far short they are and roughly how many
   trains it will take to catch up.
 
@@ -324,7 +334,7 @@ css/styles.css        All styling. Colours are CSS variables; light theme via [d
 js/util.js            Dates, money formatting and parsing, escaping (pure, no DOM)
 js/torn.js            Torn API fetch + import plan (preview before saving)
 js/calc.js            ALL financial maths: ledger, salary, summaries, sales by month (pure, unit-tested)
-js/jobs.js            Music Store job table, job fit, ranking and suggestions with job limits (pure, unit-tested)
+js/jobs.js            Music Store job table, job fit, ranking, suggestions with job limits and the role advisor (pure, unit-tested)
 js/db.js              IndexedDB storage with an in-memory copy and atomic multi-record saves
 js/services.js        Business rules: validation, data rules, activity log. The only writer.
 js/ui.js              Shared UI pieces: modal, confirm, toast, tables, badges, icons, filters

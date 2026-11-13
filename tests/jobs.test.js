@@ -167,3 +167,75 @@ test('suggestJobs: a chosen job is kept, uses up the limit, and stale choices ar
   assert.deepEqual(m2.get('Other').lostTo.map((l) => [l.job, l.takenBy.map((x) => x.id)]), [['Supervisor', ['Picky']]]);
   assert.equal(J.validChoice({ chosenJob: 'Not a job', workingStats: strong.workingStats }), null);
 });
+
+// ---------- Role advisor ----------
+
+const roleOf = (advice, name) => advice.roles.find((r) => r.job === name);
+const names = (list) => list.map((x) => (x.employee || x).name);
+
+test('adviseRoles: every job is listed, hardest first, with who fits and who holds it now', () => {
+  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  assert.deepEqual(a.roles.map((r) => r.job), [...J.JOBS].reverse().map((j) => j.name));
+  const cleaner = roleOf(a, 'Cleaner');
+  assert.deepEqual(names(cleaner.best), ['Strongest1'], 'the suggested holder, not whoever has it on Torn');
+  assert.deepEqual(names(cleaner.alsoMeets), ['Boss1', 'Cleaner1', 'Seller1', 'Spare1'], 'others who meet it, strongest MAN first');
+  assert.deepEqual(names(cleaner.heldNow), ['Cleaner1', 'NoStats'], 'held now = position on Torn, stats or not');
+  assert.equal(cleaner.limit, 1);
+  assert.equal(roleOf(a, 'Musician').limit, null, 'no limit set -> null');
+});
+
+test('adviseRoles: nobody qualifies -> best is empty and the closest are ranked by trains', () => {
+  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  const sup = roleOf(a, 'Supervisor'); // END 7,000 / INT 3,500
+  assert.deepEqual(sup.best, []);
+  // Strongest1 is only INT 1,831 short (80 trains at 23 INT); Boss1 END 1,886 short (41 at 46 END).
+  assert.deepEqual(sup.closest.map((c) => [c.employee.name, c.trains]), [['Boss1', 41], ['Strongest1', 80]]);
+  assert.deepEqual(sup.closest[0].short, { END: 1886 });
+  assert.ok(sup.closest.length <= 2, 'only the nearest two, so the panel stays short');
+});
+
+test('adviseRoles: equal trains break on smaller total shortfall, then name', () => {
+  const p = (name, stats) => ({ id: name, name, position: 'Sales Apprentice', workingStats: stats });
+  // Musician: INT 9,000 / MAN 4,500, gains INT 48 / MAN 24. Both are 10 trains away.
+  const staff = [p('Zed', 'MAN 4500 / INT 8520 / END 0'), p('Amy', 'MAN 4500 / INT 8530 / END 0'), p('Bob', 'MAN 4500 / INT 8530 / END 0')];
+  assert.deepEqual(roleOf(J.adviseRoles(staff, {}), 'Musician').closest.map((c) => c.employee.name), ['Amy', 'Bob']);
+});
+
+test('adviseRoles: staff who left and staff without stats are never suggested', () => {
+  const gone = { id: 'gone', name: 'Gone', status: 'left', position: 'Trainer', workingStats: 'MAN 99999 / INT 99999 / END 99999' };
+  const a = J.adviseRoles([...TEAM, gone], J.DEFAULT_LIMITS);
+  const trainer = roleOf(a, 'Trainer');
+  assert.deepEqual(trainer.best, []);
+  assert.deepEqual(trainer.heldNow, [], 'someone who left does not hold a job');
+  assert.ok(!a.moves.some((m) => m.employee.id === 'gone'));
+  for (const r of a.roles) assert.ok(!names(r.closest).includes('NoStats'));
+  assert.ok(!a.moves.some((m) => m.employee.id === 'nostats'));
+});
+
+test('adviseRoles: moves list who should change job, hardest destination first', () => {
+  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  assert.deepEqual(a.moves.map((m) => [m.employee.name, m.from, m.to, m.belowNow]), [
+    ['Boss1', 'Supervisor', 'Sales Assistant', true],
+    ['Strongest1', 'Sales Apprentice', 'Cleaner', false],
+    ['Cleaner1', 'Cleaner', 'Sales Apprentice', false],
+    ['Seller1', 'Sales Assistant', 'Sales Apprentice', true],
+    ['Spare1', 'Unassigned', 'Sales Apprentice', false],
+  ]);
+  // NewHire meets nothing and is in Sales Apprentice: flagged, but there's nowhere to move them.
+  assert.deepEqual(a.stuck.map((s) => [s.employee.name, s.job, s.trains]), [['NewHire', 'Sales Apprentice', 33]]);
+});
+
+test('adviseRoles: a chosen job is respected and marked', () => {
+  const p = (id, position, stats, chosenJob) => ({ id, name: id, position, workingStats: stats, chosenJob });
+  const a = J.adviseRoles([p('Picky', 'Musician', 'MAN 5000 / INT 10000 / END 8000', 'Supervisor')], J.DEFAULT_LIMITS);
+  assert.deepEqual(a.moves.map((m) => [m.employee.id, m.to, m.chosen]), [['Picky', 'Supervisor', true]]);
+  assert.equal(roleOf(a, 'Supervisor').best[0].id, 'Picky');
+});
+
+test('adviseRoles: empty or missing staff gives empty advice, not a crash', () => {
+  const a = J.adviseRoles(undefined, undefined);
+  assert.equal(a.roles.length, J.JOBS.length);
+  assert.ok(a.roles.every((r) => !r.best.length && !r.closest.length && !r.heldNow.length));
+  assert.deepEqual(a.moves, []);
+  assert.deepEqual(a.stuck, []);
+});

@@ -173,5 +173,57 @@
     return out;
   }
 
-  return { JOBS, STAT_KEYS, DEFAULT_LIMITS, parseStats, findJob, shortfall, meets, trainsToMeet, jobFit, rankForJob, cleanLimits, suggestJobs, validChoice };
+  const CLOSEST_SHOWN = 2;
+
+  /*
+   * The director's "who suits which role" view, built on suggestJobs so it can never disagree
+   * with the Suggested job column. Staff who have left are dropped here (not by the caller)
+   * because advice about them is never useful. -> {
+   *   roles: [{ job, needs, limit|null,
+   *             best:      [employee]  suggested holders,
+   *             alsoMeets: [employee]  meet it but are suggested elsewhere, strongest first,
+   *             closest:   [{ employee, short, trains }]  nearest who don't meet it yet,
+   *             heldNow:   [employee]  position on Torn today }], hardest job first
+   *   moves: [{ employee, from, to, chosen, belowNow }], hardest destination first
+   *   stuck: [{ employee, job, short, trains }]  meet no job with room, so nowhere to move them
+   * }
+   */
+  function adviseRoles(employees, limits) {
+    const staff = (employees || []).filter((e) => e && e.status !== 'left');
+    const sugs = suggestJobs(staff, limits);
+    const lim = limits || {};
+    const withStats = staff.map((e) => ({ e, stats: parseStats(e.workingStats) })).filter((r) => r.stats);
+    const totalShort = (s) => Object.values(s).reduce((a, b) => a + b, 0);
+
+    const roles = [...JOBS].reverse().map((job) => {
+      const best = staff.filter((e) => sugs.get(e.id) && sugs.get(e.id).job === job.name);
+      const alsoMeets = rankForJob(staff, job.name).map((r) => r.employee).filter((e) => !best.includes(e));
+      const closest = withStats
+        .filter((r) => !meets(r.stats, job))
+        .map((r) => ({ employee: r.e, short: shortfall(r.stats, job), trains: trainsToMeet(r.stats, job) }))
+        .sort((a, b) => (a.trains - b.trains) || (totalShort(a.short) - totalShort(b.short)) || a.employee.name.localeCompare(b.employee.name))
+        .slice(0, CLOSEST_SHOWN);
+      const heldNow = staff.filter((e) => findJob(e.position) === job);
+      return { job: job.name, needs: job.needs, limit: Number.isInteger(lim[job.name]) ? lim[job.name] : null, best, alsoMeets, closest, heldNow };
+    });
+
+    const hardness = (name) => JOBS.findIndex((j) => j.name === name);
+    const moves = [], stuck = [];
+    for (const { e, stats } of withStats) {
+      const sug = sugs.get(e.id);
+      const now = findJob(e.position);
+      if (!sug.job) {
+        // Measure them against the job they're in, or the entry job if theirs isn't a Music Store one.
+        const target = now || JOBS[0];
+        stuck.push({ employee: e, job: target.name, short: shortfall(stats, target), trains: trainsToMeet(stats, target) });
+      } else if (!now || now.name !== sug.job) {
+        moves.push({ employee: e, from: e.position, to: sug.job, chosen: !!sug.chosen, belowNow: !!now && !meets(stats, now) });
+      }
+    }
+    // Array sort is stable, so people heading to the same job keep the team's order.
+    moves.sort((a, b) => hardness(b.to) - hardness(a.to));
+    return { roles, moves, stuck };
+  }
+
+  return { JOBS, STAT_KEYS, DEFAULT_LIMITS, parseStats, findJob, shortfall, meets, trainsToMeet, jobFit, rankForJob, cleanLimits, suggestJobs, validChoice, adviseRoles };
 });
