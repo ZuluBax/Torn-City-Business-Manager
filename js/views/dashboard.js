@@ -56,6 +56,15 @@
       ? `<div class="review-alert" role="status">${ui.icon('alert')}<span>${reviewCount} Torn payment${reviewCount === 1 ? '' : 's'} need${reviewCount === 1 ? 's' : ''} checking</span><a href="#/payments" class="link-sm">Check now →</a></div>`
       : '';
 
+    // The Pi's 15-minute refresh records the company type; if it no longer matches the saved
+    // job table (or there isn't one yet), job advice is out of date until the next import.
+    const typeId = s.tornCompany && s.tornCompany.typeId;
+    const typeAlert = Number.isInteger(typeId) && (!s.companyType || s.companyType.id !== typeId)
+      ? `<div class="review-alert" role="status">${ui.icon('alert')}<span>${s.companyType
+        ? `Torn shows a different company type from the one set up here (${esc(s.companyType.name)}). Import from Torn to switch the jobs over.`
+        : 'Your company\'s jobs aren\'t set up yet. Import from Torn to load them.'}</span><button type="button" class="btn btn-sm btn-primary" data-q="torn">${ui.icon('download')} Import from Torn</button></div>`
+      : '';
+
     // ---- Movable pieces: each has a stable id used by the saved layout ----
 
     const cards = {
@@ -101,7 +110,7 @@
       </dl>`, { actions: '<a href="#/training" class="link-sm">Training →</a>' }) };
     blocks.owing = { label: 'Outstanding payments', html: ui.panel('Outstanding payments', ui.table({
       rows: owing,
-      empty: 'Nobody owes anything. 🎵',
+      empty: 'Nobody owes anything.',
       columns: [
         { label: 'Employee', render: (r) => ui.employeeLink(r.e.id) },
         { label: 'Trains owing', align: 'right', render: (r) => r.trains },
@@ -160,6 +169,7 @@
           <button type="button" class="btn btn-sm btn-primary" data-arrange-done>Done</button>
         </div>` : ''}
       ${firstRun}
+      ${typeAlert}
       ${reviewAlert}
       <div class="dash-grid ${arranging ? 'arranging' : ''}" data-sortable>
         ${layout.map((it) => `<div class="dash-item span-${it.span} is-${kinds[it.id]}${it.col ? ' has-col' : ''}" data-item="${it.id}"${it.col ? ` style="--col:${it.col}"` : ''}><div class="dash-inner">${arranging ? L.editBar(parts[it.id].label, it.span) : ''}${parts[it.id].html}</div></div>`).join('')}

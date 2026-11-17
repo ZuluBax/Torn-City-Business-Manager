@@ -1,22 +1,28 @@
 (function (DMB) {
   'use strict';
-  const U = DMB.util, C = DMB.calc, db = DMB.db, S = DMB.services, ui = DMB.ui, F = DMB.forms, J = DMB.jobs;
+  const U = DMB.util, C = DMB.calc, db = DMB.db, S = DMB.services, ui = DMB.ui, F = DMB.forms;
+  // Looked up per call: importing a different company type swaps the table at runtime.
+  const J = () => DMB.jobs.forTable(db.settings().companyType);
   const esc = U.escapeHtml;
 
-  // ---------- Job fit (stats vs. the Music Store's recommended stats) ----------
+  // ---------- Job fit (stats vs. your company type's recommended stats, from Torn) ----------
+
+  const NO_JOBS_TEXT = 'Import from Torn to load your company\'s jobs, then this shows who suits each one.';
+  const noJobsDash = () => `<span class="muted" title="${esc(NO_JOBS_TEXT)}">—</span>`;
 
   const shortText = (short) => Object.entries(short).map(([k, n]) => `${U.formatNumber(n)} ${k}`).join(' and ');
   const trainsText = (n) => (n == null ? '' : ` (about ${U.formatNumber(n)} train${n === 1 ? '' : 's'})`);
 
   // Suggestions depend on the whole team (a limited job goes to the strongest), so they're
   // worked out once per render. Staff who have left neither get nor take a job.
-  const suggestions = () => J.suggestJobs(db.all('employees').filter((e) => e.status !== 'left'), db.settings().jobLimits);
+  const suggestions = () => J().suggestJobs(db.all('employees').filter((e) => e.status !== 'left'), db.settings().jobLimits);
 
   // "Cleaner goes to Strongest1" — why someone isn't suggested a job their stats meet.
   const lostText = (lostTo) => lostTo.map((l) => `${l.job} goes to ${l.takenBy.map((x) => x.name).join(', ')}`).join('; ');
 
   function jobFitBadge(e, sugs) {
-    const fit = J.jobFit(e);
+    if (!J().hasJobs) return noJobsDash();
+    const fit = J().jobFit(e);
     if (!fit) return '<span class="muted" title="No working stats yet. Import from Torn to fetch them.">—</span>';
     if (e.status === 'left') return '<span class="muted" title="Has left, so no job is suggested.">—</span>';
     const tag = (tone, text, title) => `<span class="badge badge-${tone}" title="${esc(title)}">${esc(text)}</span>`;
@@ -35,7 +41,7 @@
     const why = sug.lostTo.length ? ` ${lostText(sug.lostTo)}.` : '';
     const target = sug.job ? `Suggest ${sug.job}` : 'No open job fits';
     if (fit.current && !fit.current.meets) return tag('amber', `Below stats · ${target}`, `Short of ${fit.current.job} by ${shortText(fit.current.short)}${trainsText(fit.current.trains)}.${why}`);
-    if (!fit.current) return tag(sug.job ? 'blue' : 'muted', target, `"${e.position}" is not a Music Store job.${why}`);
+    if (!fit.current) return tag(sug.job ? 'blue' : 'muted', target, `"${e.position}" isn't one of the ${J().table.name} jobs.${why}`);
     if (sug.job === fit.current.job) return tag('green', 'Right job', `Best job for their stats that has room.${why}`);
     if (sug.job) return tag('blue', `Move to ${sug.job}`, `${sug.job} is the hardest job they meet that has room.${why}`);
     return tag('muted', target, `Every job they meet is full.${why}`);
@@ -56,7 +62,7 @@
 
   // '' when there's nothing to choose between (fewer than two jobs met).
   function chosenJobPicker(e, sug) {
-    const fit = J.jobFit(e);
+    const fit = J().jobFit(e);
     if (!fit || fit.qualifies.length < 2) return '';
     const chosen = sug.chosen ? sug.job : '';
     const auto = sug.chosen ? 'Automatic' : `Automatic (${sug.job || 'none'})`;
@@ -88,13 +94,14 @@
   }
 
   function jobFitDetails(e) {
-    const fit = J.jobFit(e);
+    if (!J().hasJobs) return `<span class="muted">${esc(NO_JOBS_TEXT)}</span>`;
+    const fit = J().jobFit(e);
     if (!fit) return '<span class="muted">Needs working stats (MAN / INT / END) to compare.</span>';
     const sugs = suggestions();
     const sug = sugs.get(e.id);
     const lines = [jobFitBadge(e, sugs)];
     if (fit.current && !fit.current.meets) lines.push(`Short of ${esc(fit.current.job)} by ${esc(shortText(fit.current.short))}${esc(trainsText(fit.current.trains))}.`);
-    lines.push(fit.qualifies.length ? `Stats meet: ${fit.qualifies.map(esc).join(', ')}.` : 'Stats don\'t meet any Music Store job yet.');
+    lines.push(fit.qualifies.length ? `Stats meet: ${fit.qualifies.map(esc).join(', ')}.` : `Stats don't meet any ${esc(J().table.name)} job yet.`);
     const picker = e.status !== 'left' && sug ? chosenJobPicker(e, sug) : '';
     if (picker) lines.push(`<label class="inline-field">Chosen job ${picker}</label>`);
     if (sug && sug.lostTo.length) lines.push(`${esc(lostText(sug.lostTo))} (stronger stats).`);
@@ -104,22 +111,23 @@
   // "Best for this job": who meets a job's stats, strongest first. Staff who have left are
   // excluded so the list only suggests people you can actually move.
   function renderBestForJob(el) {
-    const job = J.findJob(bestFor.job) || J.JOBS[0];
-    const [main, second] = Object.keys(job.needs);
+    const job = J().findJob(bestFor.job) || J().JOBS[0];
+    if (!job) { el.querySelector('[data-best]').innerHTML = `<p class="muted">${esc(NO_JOBS_TEXT)}</p>`; return; }
+    // Torn jobs need two stats today; reading the keys keeps this right if one ever needs one or three.
+    const keys = Object.keys(job.needs);
     const current = db.snapshot().employees.filter((e) => e.status !== 'left');
-    const rows = J.rankForJob(current, job.name).map((r, i) => ({ ...r, rank: i + 1 }));
+    const rows = J().rankForJob(current, job.name).map((r, i) => ({ ...r, rank: i + 1 }));
     const sugs = suggestions();
     const limit = (db.settings().jobLimits || {})[job.name];
     const limitText = Number.isInteger(limit) ? ` Limit: ${limit} ${limit === 1 ? 'person' : 'people'}, so only the top ${limit === 1 ? 'one is' : `${limit} are`} suggested here.` : '';
-    const needs = `Needs ${U.formatNumber(job.needs[main])} ${main} and ${U.formatNumber(job.needs[second])} ${second}.`;
-    el.querySelector('[data-best]').innerHTML = `<p class="small muted">${esc(needs)} Ranked by ${esc(main)}, then ${esc(second)}.${esc(limitText)}</p>` + ui.table({
+    const needs = `Needs ${keys.map((k) => `${U.formatNumber(job.needs[k])} ${k}`).join(' and ')}.`;
+    el.querySelector('[data-best]').innerHTML = `<p class="small muted">${esc(needs)} Ranked by ${esc(keys.join(', then '))}.${esc(limitText)}</p>` + ui.table({
       empty: `Nobody meets the ${job.name} stats yet.`,
       rows,
       columns: [
         { label: '#', align: 'right', render: (r) => r.rank },
         { label: 'Employee', render: (r) => ui.employeeLink(r.employee.id) },
-        { label: main, align: 'right', render: (r) => `<strong>${U.formatNumber(r.stats[main])}</strong>` },
-        { label: second, align: 'right', render: (r) => U.formatNumber(r.stats[second]) },
+        ...keys.map((k, i) => ({ label: k, align: 'right', render: (r) => (i === 0 ? `<strong>${U.formatNumber(r.stats[k])}</strong>` : U.formatNumber(r.stats[k])) })),
         { label: 'Job now', render: (r) => esc(r.employee.position) },
         { label: 'Suggested job', render: (r) => suggestedCell(r.employee, sugs) },
         { label: 'Job fit', render: (r) => jobFitBadge(r.employee, sugs) },
@@ -152,12 +160,13 @@
 
   /*
    * compact = the dashboard summary (moves only); otherwise the full per-role table too.
-   * Same rules as the Suggested job column (J.adviseRoles builds on suggestJobs).
+   * Same rules as the Suggested job column (J().adviseRoles builds on suggestJobs).
    */
   function roleAdvisorHtml({ compact = false } = {}) {
     const staff = db.all('employees');
-    const advice = J.adviseRoles(staff, db.settings().jobLimits);
-    if (!staff.some((e) => e.status !== 'left' && J.parseStats(e.workingStats))) {
+    if (!J().hasJobs) return `<p class="muted">${esc(NO_JOBS_TEXT)}</p>`;
+    const advice = J().adviseRoles(staff, db.settings().jobLimits);
+    if (!staff.some((e) => e.status !== 'left' && J().parseStats(e.workingStats))) {
       return '<p class="muted">No working stats yet. Import from Torn to fetch them, then this will show who suits each role.</p>';
     }
     const caveat = '<p class="small muted">Based on Torn\'s recommended stats and your job limits in Settings, using the latest working stats the app has. Train counts are rough (as if they train in that job). It doesn\'t weigh effectiveness or addiction, and nothing changes on Torn until you move people there.</p>';
@@ -184,7 +193,7 @@
 
   // Kept at module level so filters survive re-renders when data changes.
   const filters = { q: '', status: 'current', position: '', sort: 'name' };
-  const bestFor = { job: J.JOBS[0].name };
+  const bestFor = { job: '' }; // '' = the easiest job of whatever company type is loaded
 
   const SORTS = {
     name: { label: 'Name (A–Z)', fn: (a, b) => a.e.name.localeCompare(b.e.name) },
@@ -274,7 +283,7 @@
       ${ui.panel('Role advisor', roleAdvisorHtml(), { cls: 'panel-best' })}
       ${ui.panel('Best for each job', '<div data-best></div>', {
         cls: 'panel-best',
-        actions: `<select data-best-job aria-label="Choose a job">${ui.options(J.JOBS.map((j) => j.name), bestFor.job)}</select>`,
+        actions: `<select data-best-job aria-label="Choose a job">${ui.options(J().JOBS.map((j) => j.name), bestFor.job)}</select>`,
       })}`;
     el.querySelector('[data-add]').addEventListener('click', () => F.employeeForm());
     el.querySelector('[data-best-job]').addEventListener('change', (ev) => { bestFor.job = ev.target.value; renderBestForJob(el); });

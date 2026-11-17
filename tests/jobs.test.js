@@ -1,7 +1,12 @@
 // Run with: node --test tests/*.test.js
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const J = require('../js/jobs.js');
+const JOBS = require('../js/jobs.js');
+const TYPES = require('./fixtures/torn-company-types.json').companies; // real Torn data, 17 Nov 2026
+
+// These tests were written against the old hard-coded Music Store table. Running them
+// unchanged against Torn's own Music Store data (type 23) proves nothing moved.
+const J = JOBS.forTable(JOBS.fromTorn('23', TYPES['23']));
 
 const emp = (position, workingStats) => ({ position, workingStats });
 
@@ -238,4 +243,105 @@ test('adviseRoles: empty or missing staff gives empty advice, not a crash', () =
   assert.ok(a.roles.every((r) => !r.best.length && !r.closest.length && !r.heldNow.length));
   assert.deepEqual(a.moves, []);
   assert.deepEqual(a.stuck, []);
+});
+
+// ---------- Any company type (job tables built from Torn's data) ----------
+
+// The Music Store table as it was hard-coded before 17 Nov 2026 (from the Torn wiki).
+const OLD_MUSIC_STORE = [
+  { name: 'Sales Apprentice', needs: { END: 1000, INT: 500 }, gains: { END: 30, INT: 15 }, special: '' },
+  { name: 'Cleaner', needs: { MAN: 2000, END: 1000 }, gains: { MAN: 36, END: 18 }, special: 'Cleaner' },
+  { name: 'Sales Assistant', needs: { END: 3500, INT: 1750 }, gains: { END: 40, INT: 20 }, special: '' },
+  { name: 'Bookkeeper', needs: { END: 5500, INT: 2750 }, gains: { END: 44, INT: 22 }, special: 'Secretary' },
+  { name: 'Supervisor', needs: { END: 7000, INT: 3500 }, gains: { END: 46, INT: 23 }, special: 'Manager' },
+  { name: 'Musician', needs: { INT: 9000, MAN: 4500 }, gains: { INT: 48, MAN: 24 }, special: '' },
+  { name: 'Trainer', needs: { INT: 10500, END: 5250 }, gains: { INT: 49, END: 25 }, special: 'Trainer' },
+];
+
+test('fromTorn: Music Store matches the old hard-coded table exactly, order and limits included', () => {
+  const t = JOBS.fromTorn('23', TYPES['23']);
+  assert.equal(t.id, 23);
+  assert.equal(t.name, 'Music Store');
+  assert.deepEqual(t.jobs, OLD_MUSIC_STORE);
+  // Key order matters: the first need is the main stat used for ranking.
+  assert.deepEqual(t.jobs.map((j) => Object.keys(j.needs)), OLD_MUSIC_STORE.map((j) => Object.keys(j.needs)));
+  assert.deepEqual(J.DEFAULT_LIMITS, { Cleaner: 1, Bookkeeper: 1, Supervisor: 1, Trainer: 1 });
+});
+
+const AN = JOBS.forTable(JOBS.fromTorn('10', TYPES['10']));
+
+test('fromTorn: Adult Novelties gets its own jobs, easiest first, one-per-company specials limited', () => {
+  assert.equal(AN.table.name, 'Adult Novelties');
+  assert.deepEqual(AN.JOBS.map((j) => j.name), ['Cleaner', 'Sales Assistant', 'Receptionist', 'Marketing Manager', 'Store Manager', 'Sexpert', 'HR Officer']);
+  assert.deepEqual(AN.findJob('sexpert').needs, { INT: 10000, END: 5000 });
+  assert.deepEqual(AN.DEFAULT_LIMITS, { Cleaner: 1, Receptionist: 1, 'Marketing Manager': 1, 'Store Manager': 1, 'HR Officer': 1 });
+  assert.equal(AN.findJob('Musician'), null, 'no Music Store jobs leak in');
+});
+
+test('Adult Novelties: job fit and suggestions use the new table', () => {
+  const sa = { id: 'a', name: 'A', position: 'Sales Assistant', workingStats: 'MAN 2,500 / INT 11,000 / END 6,000' };
+  const fit = AN.jobFit(sa);
+  assert.equal(fit.verdict, 'better');
+  assert.equal(fit.best, 'Sexpert');
+  assert.deepEqual(fit.qualifies, ['Cleaner', 'Sales Assistant', 'Receptionist', 'Marketing Manager', 'Sexpert']);
+  assert.equal(AN.suggestJobs([sa], AN.DEFAULT_LIMITS).get('a').job, 'Sexpert');
+  // A Music Store position isn't a job here, so they're "unassigned" and still get advice.
+  assert.equal(AN.jobFit({ ...sa, position: 'Musician' }).verdict, 'unassigned');
+});
+
+test('fromTorn: every one of Torn\'s 39 company types builds a usable table', () => {
+  const ids = Object.keys(TYPES);
+  assert.equal(ids.length, 39);
+  for (const id of ids) {
+    const t = JOBS.fromTorn(id, TYPES[id]);
+    assert.ok(t, `type ${id} built`);
+    assert.equal(t.jobs.length, Object.keys(TYPES[id].positions).length, `${t.name}: no job dropped`);
+    const mains = t.jobs.map((j) => Object.values(j.needs)[0]);
+    assert.deepEqual(mains, [...mains].sort((a, b) => a - b), `${t.name}: easiest first`);
+    for (const j of t.jobs) {
+      const zero = { MAN: 0, INT: 0, END: 0 };
+      assert.notEqual(JOBS.trainsToMeet(zero, j), null, `${t.name} / ${j.name}: its own training can reach it`);
+    }
+  }
+});
+
+test('forTable(null): no table means no jobs and no advice, never a crash', () => {
+  const N = JOBS.forTable(null);
+  const e = { id: 'x', name: 'X', position: 'Cleaner', workingStats: 'MAN 1 / INT 1 / END 1' };
+  assert.equal(N.hasJobs, false);
+  assert.deepEqual(N.JOBS, []);
+  assert.deepEqual(N.DEFAULT_LIMITS, {});
+  assert.equal(N.jobFit(e).verdict, 'unassigned');
+  assert.equal(N.suggestJobs([e], {}).get('x').job, null);
+  assert.deepEqual(N.adviseRoles([e], {}), { roles: [], moves: [], stuck: [] });
+  assert.deepEqual(N.cleanLimits({ Cleaner: '1' }), { limits: {}, errors: {} });
+});
+
+test('forTable caches per table object, so a new saved table is never served stale', () => {
+  const t = JOBS.fromTorn('10', TYPES['10']);
+  assert.equal(JOBS.forTable(t), JOBS.forTable(t));
+  assert.notEqual(JOBS.forTable(t), JOBS.forTable({ ...t }));
+});
+
+test('cleanTable: junk from a backup or another device is dropped, not trusted', () => {
+  assert.equal(JOBS.cleanTable(null), null);
+  assert.equal(JOBS.cleanTable({ jobs: 'nope' }), null);
+  assert.equal(JOBS.cleanTable({ jobs: [] }), null, 'no usable jobs counts as no table');
+  const t = JOBS.cleanTable({ id: -4, name: '', jobs: [
+    { name: 'Good', needs: { MAN: 100, INT: 50 }, gains: { MAN: 5 } },
+    { name: 'good', needs: { MAN: 1 } },                       // duplicate name (case-insensitive)
+    { name: 'NoNeeds', needs: { MAN: 0, INT: -5 } },           // nothing usable
+    { name: 'Weird', needs: { MAN: 1.5, END: 'x', INT: 2e9, LUCK: 7 } },
+    { name: '', needs: { MAN: 1 } },
+    null,
+  ] });
+  assert.deepEqual(t, { id: null, name: 'Company', jobs: [{ name: 'Good', needs: { MAN: 100, INT: 50 }, gains: { MAN: 5 }, special: '' }] });
+  const many = { jobs: Array.from({ length: 50 }, (_, i) => ({ name: `J${i}`, needs: { MAN: i + 1 } })) };
+  assert.equal(JOBS.cleanTable(many).jobs.length, 30, 'capped');
+});
+
+test('fromTorn: a malformed Torn entry gives null', () => {
+  assert.equal(JOBS.fromTorn('1', null), null);
+  assert.equal(JOBS.fromTorn('1', { name: 'X' }), null);
+  assert.equal(JOBS.fromTorn('1', { name: 'X', positions: { A: { man_required: 0 } } }), null);
 });

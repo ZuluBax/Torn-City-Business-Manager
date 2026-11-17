@@ -152,8 +152,9 @@
     const e = db.get('employees', id);
     if (!e) throw new ValidationError({ _form: 'That employee no longer exists.' });
     const name = str(jobName);
-    const chosenJob = name ? (DMB.jobs.findJob(name) || {}).name || null : null;
-    if (name && !DMB.jobs.validChoice({ ...e, chosenJob })) throw new ValidationError({ _form: `${e.name}'s stats don't meet ${name}.` });
+    const J = DMB.jobs.forTable(db.settings().companyType);
+    const chosenJob = name ? (J.findJob(name) || {}).name || null : null;
+    if (name && !J.validChoice({ ...e, chosenJob })) throw new ValidationError({ _form: `${e.name}'s stats don't meet ${name}.` });
     if ((e.chosenJob || null) === chosenJob) return e;
     const rec = { ...e, chosenJob, updatedAt: now() };
     await db.commit([{ store: 'employees', put: rec }], {
@@ -412,7 +413,7 @@
       else if (next.banner.length > MAX_BANNER_CHARS) v.add('banner', 'The banner image is too large (max 500 KB).');
     }
     if ('jobLimits' in patch) {
-      const { limits, errors } = DMB.jobs.cleanLimits(patch.jobLimits);
+      const { limits, errors } = DMB.jobs.forTable(current.companyType).cleanLimits(patch.jobLimits);
       for (const [job, msg] of Object.entries(errors)) v.add(job, msg); // field names are the job names
       next.jobLimits = limits;
     }
@@ -445,13 +446,26 @@
    * Saves the parts of a Torn import plan the user ticked, all in one transaction.
    * `pick` = { newEmployees: Set<tornId>, updates: Set<id>, gone: Set<id>, setup: boolean }.
    * The company snapshot is always stored so the dashboard can show funds / trains.
+   * `typeUpdate` (optional, from DMB.torn.companyTypeUpdate) saves a freshly fetched job table;
+   * on a new company type it also swaps positions and limits and clears dead chosen jobs.
    */
-  async function applyTornImport(plan, pick, snapshot) {
+  async function applyTornImport(plan, pick, snapshot, typeUpdate) {
     const today = U.todayISO();
     const ops = [];
     const summary = [];
     const settings = { ...db.settings(), tornCompany: snapshot, tornLastSync: now() };
-    if (plan.positions.length) settings.positions = [...settings.positions, ...plan.positions];
+    const clearChosen = new Set();
+    if (typeUpdate) {
+      settings.companyType = typeUpdate.table;
+      if (typeUpdate.typeChanged) {
+        settings.positions = typeUpdate.positions;
+        settings.jobLimits = typeUpdate.jobLimits;
+        typeUpdate.clearChosen.forEach((id) => clearChosen.add(id));
+        summary.push(`jobs set up for ${typeUpdate.table.name}`);
+      }
+    }
+    const missing = plan.positions.filter((p) => !settings.positions.includes(p));
+    if (missing.length) settings.positions = [...settings.positions, ...missing];
 
     const added = plan.newEmployees.filter((n) => pick.newEmployees.has(n.tornId));
     for (const n of added) {
@@ -510,6 +524,14 @@
     if (db.mode !== 'server') {
       const entry = DMB.torn.effectivenessLogEntry(snapshot, Date.now());
       if (entry && !DMB.torn.sameLogEntry(entry, db.get('effectivenessLog', entry.id))) ops.push({ store: 'effectivenessLog', put: entry });
+    }
+
+    // Chosen jobs from the old company type. Patch the employee's pending write if this import
+    // already touches them, so one record never gets two competing puts in the same commit.
+    for (const id of clearChosen) {
+      const op = ops.find((o) => o.store === 'employees' && o.put && o.put.id === id);
+      if (op) op.put = { ...op.put, chosenJob: null };
+      else if (db.get('employees', id)) ops.push({ store: 'employees', put: { ...db.get('employees', id), chosenJob: null, updatedAt: now() } });
     }
 
     ops.push({ store: 'settings', put: settings });

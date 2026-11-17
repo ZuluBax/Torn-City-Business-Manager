@@ -121,3 +121,47 @@ test('fetchEvents explains a Cloudflare 429 instead of failing to parse HTML', a
     global.fetch = realFetch;
   }
 });
+
+// ---------- Company type: which job table applies ----------
+
+const J = require('../js/jobs.js');
+const TYPES = require('./fixtures/torn-company-types.json').companies;
+const table = (id, fetchedAt = '2026-11-17T00:00:00Z') => ({ ...J.fromTorn(String(id), TYPES[id]), fetchedAt });
+const NOW = Date.parse('2026-11-17T12:00:00Z');
+
+test('snapshot records the company type, or null when Torn leaves it out', () => {
+  assert.equal(T.companySnapshot(company({ company: { ...company().company, company_type: 10 } }), 'x').typeId, 10);
+  assert.equal(T.companySnapshot(company(), 'x').typeId, null);
+});
+
+test('needsTypeRefresh: missing, different or month-old tables are re-read; others are not', () => {
+  assert.equal(T.needsTypeRefresh(null, 10, NOW), true, 'no table yet');
+  assert.equal(T.needsTypeRefresh(table(23), 10, NOW), true, 'sold the Music Store, now Adult Novelties');
+  assert.equal(T.needsTypeRefresh(table(10), 10, NOW), false, 'fresh and the same type');
+  assert.equal(T.needsTypeRefresh(table(10, '2026-10-01T00:00:00Z'), 10, NOW), true, 'older than 30 days');
+  assert.equal(T.needsTypeRefresh(table(10, 'garbage'), 10, NOW), true, 'unreadable date');
+  assert.equal(T.needsTypeRefresh(null, null, NOW), false, 'Torn gave no type: nothing to fetch for');
+});
+
+test('companyTypeUpdate: a new type swaps positions, resets limits and clears chosen jobs that no longer exist', () => {
+  const staff = [
+    emp('1', { position: 'Sexpert', chosenJob: 'HR Officer' }),   // valid in the new company: kept
+    emp('2', { position: 'Musician', chosenJob: 'Trainer' }),     // old company's jobs: cleared
+    emp('3', { position: 'Musician', status: 'left' }),
+  ];
+  const u = T.companyTypeUpdate(table(10), { companyType: table(23) }, staff);
+  assert.equal(u.typeChanged, true);
+  assert.deepEqual(u.positions, ['Cleaner', 'Sales Assistant', 'Receptionist', 'Marketing Manager', 'Store Manager', 'Sexpert', 'HR Officer', 'Musician']);
+  assert.deepEqual(u.jobLimits, { Cleaner: 1, Receptionist: 1, 'Marketing Manager': 1, 'Store Manager': 1, 'HR Officer': 1 });
+  assert.deepEqual(u.clearChosen, ['e2']);
+});
+
+test('companyTypeUpdate: first table ever counts as a type change (settings still hold old defaults)', () => {
+  assert.equal(T.companyTypeUpdate(table(10), { companyType: null }, []).typeChanged, true);
+});
+
+test('companyTypeUpdate: same type only refreshes the table, leaving your limits and positions alone', () => {
+  const u = T.companyTypeUpdate(table(10), { companyType: table(10, '2026-09-01T00:00:00Z') }, [emp('1', { chosenJob: 'Ghost' })]);
+  assert.deepEqual({ typeChanged: u.typeChanged, positions: u.positions, jobLimits: u.jobLimits, clearChosen: u.clearChosen },
+    { typeChanged: false, positions: null, jobLimits: null, clearChosen: [] });
+});

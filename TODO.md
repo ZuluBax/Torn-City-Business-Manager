@@ -1,6 +1,31 @@
 # TODO
 
-## Where we left off (5 Nov 2026)
+## Where we left off (17 Nov 2026)
+
+**Sold the Music Store; now running an Adult Novelties company.** The app now works for any
+of Torn's 39 company types (branch `any-company-type`):
+- Job tables come from Torn (`torn?selections=companies`) on Import, saved as
+  `settings.companyType`. No company's jobs are hard-coded any more.
+- The Pi snapshot records `typeId`; the Dashboard says when the type doesn't match the saved
+  table. Importing a new type swaps positions, resets limits and clears dead chosen jobs.
+- Music-note logo and training icon replaced (briefcase, dumbbell).
+- Checked on a throwaway copy on the Pi (port 8011, copy of the real data) before deploying.
+
+Data: the live app was already reset and set up for the new company on 17 Nov (9 staff
+imported). **The Music Store's full history** (23 staff, 24 trainings, 13 payments, 31 days of
+logs) is kept outside the 5-day backup rotation at
+`~/torn-company-manager/archive/music-store-final-2026-11-17.db` on the Pi, plus a copy in
+`backups/` on the PC (git-ignored).
+
+Facts learned:
+- Torn API keys belong to the **player**, not the company: the same key follows you to a
+  new company.
+- Torn job tables: every job needs exactly two stats; 34 of 39 types have two jobs with
+  the same main requirement (hence the tie-break in `byDifficulty`).
+- The Pi log shows Torn "code 5" (too many requests) on events polls: the 100/min limit is
+  shared by every key on the account, so another tool using it can starve this one.
+
+## Earlier (5 Nov 2026)
 
 Everything is committed, pushed to GitHub and deployed to the Pi. Nothing is half-finished.
 
@@ -28,8 +53,8 @@ Facts to remember:
 
 ## Next up
 
-1. **Addiction vs income.** Once the daily log has a few more weeks (from about early
-   December), compare employees' addiction against daily sales.
+1. **Addiction vs income.** The daily log restarted with the new company on 17 Nov, so wait
+   until it has a few weeks (about mid-December), then compare addiction against daily sales.
 
 ## Shipped 13 Nov 2026
 
@@ -38,6 +63,10 @@ Facts to remember:
 - **Employees status filter:** "All statuses" removed; staff who left only show under "Left".
 
 ## Ideas (not started)
+
+- **Company stock and specials** from Torn (same `companies` data: stock cost/RRP, special
+  abilities by star rating). Could show margins per item.
+- **Several companies in one app**, if you ever run two at once. Today: one company per copy.
 
 - **Role advisor: weigh effectiveness/addiction** alongside stats, once there's enough log.
 

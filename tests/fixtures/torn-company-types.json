@@ -1,0 +1,3007 @@
+{
+ "companies": {
+  "1": {
+   "name": "Hair Salon",
+   "positions": {
+    "Aesthetician": {
+     "end_gain": 21,
+     "end_required": 2250,
+     "int_gain": 42,
+     "int_required": 4500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Apprentice": {
+     "end_gain": 13,
+     "end_required": 250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 25,
+     "man_required": 500,
+     "special_ability": "None"
+    },
+    "Colorist": {
+     "end_gain": 18,
+     "end_required": 1000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 36,
+     "man_required": 2000,
+     "special_ability": "None"
+    },
+    "Nail Technician": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 17,
+     "man_required": 750,
+     "special_ability": "None"
+    },
+    "Receptionist": {
+     "end_gain": 38,
+     "end_required": 2500,
+     "int_gain": 19,
+     "int_required": 1250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Senior Stylist": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 39,
+     "man_required": 3000,
+     "special_ability": "Manager"
+    },
+    "Shampooist": {
+     "end_gain": 15,
+     "end_required": 500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 30,
+     "man_required": 1000,
+     "special_ability": "Cleaner"
+    },
+    "Stylist": {
+     "end_gain": 17,
+     "end_required": 750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 34,
+     "man_required": 1500,
+     "special_ability": "None"
+    },
+    "Trainer": {
+     "end_gain": 21,
+     "end_required": 2250,
+     "int_gain": 42,
+     "int_required": 4500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "2": {
+   "name": "Law Firm",
+   "positions": {
+    "Assistant": {
+     "end_gain": 44,
+     "end_required": 5500,
+     "int_gain": 22,
+     "int_required": 2750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Attorney": {
+     "end_gain": 25,
+     "end_required": 5500,
+     "int_gain": 49,
+     "int_required": 11000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 22,
+     "end_required": 2750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 44,
+     "man_required": 5500,
+     "special_ability": "Cleaner"
+    },
+    "Consultant": {
+     "end_gain": 29,
+     "end_required": 16500,
+     "int_gain": 58,
+     "int_required": 33000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Marketer": {
+     "end_gain": 28,
+     "end_required": 11000,
+     "int_gain": 55,
+     "int_required": 22000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Secretary": {
+     "end_gain": 53,
+     "end_required": 16500,
+     "int_gain": 27,
+     "int_required": 8250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    }
+   }
+  },
+  "3": {
+   "name": "Flower Shop",
+   "positions": {
+    "Accountant": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 17,
+     "int_required": 750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Apprentice": {
+     "end_gain": 25,
+     "end_required": 500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 13,
+     "man_required": 250,
+     "special_ability": "None"
+    },
+    "Arranger": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 30,
+     "int_required": 1000,
+     "man_gain": 15,
+     "man_required": 500,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 13,
+     "end_required": 250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 25,
+     "man_required": 500,
+     "special_ability": "Cleaner"
+    },
+    "Florist": {
+     "end_gain": 30,
+     "end_required": 1000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 15,
+     "man_required": 500,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 36,
+     "end_required": 2000,
+     "int_gain": 18,
+     "int_required": 1000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 18,
+     "end_required": 1000,
+     "int_gain": 36,
+     "int_required": 2000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    }
+   }
+  },
+  "4": {
+   "name": "Car Dealership",
+   "positions": {
+    "Cleaner": {
+     "end_gain": 25,
+     "end_required": 5250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 49,
+     "man_required": 10500,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 60,
+     "end_required": 42000,
+     "int_gain": 30,
+     "int_required": 21000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Mechanic": {
+     "end_gain": 28,
+     "end_required": 13250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 56,
+     "man_required": 26500,
+     "special_ability": "None"
+    },
+    "Receptionist": {
+     "end_gain": 58,
+     "end_required": 31500,
+     "int_gain": 29,
+     "int_required": 15750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Sales Apprentice": {
+     "end_gain": 22,
+     "end_required": 2750,
+     "int_gain": 44,
+     "int_required": 5500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Sales Executive": {
+     "end_gain": 28,
+     "end_required": 10500,
+     "int_gain": 55,
+     "int_required": 21000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Training Adviser": {
+     "end_gain": 32,
+     "end_required": 31500,
+     "int_gain": 63,
+     "int_required": 63000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Webmaster": {
+     "end_gain": 30,
+     "end_required": 21000,
+     "int_gain": 60,
+     "int_required": 42000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    }
+   }
+  },
+  "5": {
+   "name": "Clothing Store",
+   "positions": {
+    "Accountant": {
+     "end_gain": 39,
+     "end_required": 3000,
+     "int_gain": 20,
+     "int_required": 1500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cashier": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 17,
+     "man_required": 750,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 15,
+     "end_required": 500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 30,
+     "man_required": 1000,
+     "special_ability": "Cleaner"
+    },
+    "Line Manager": {
+     "end_gain": 23,
+     "end_required": 3000,
+     "int_gain": 45,
+     "int_required": 6000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Marketing Manager": {
+     "end_gain": 21,
+     "end_required": 2000,
+     "int_gain": 41,
+     "int_required": 4000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Sales Trainee": {
+     "end_gain": 13,
+     "end_required": 250,
+     "int_gain": 25,
+     "int_required": 500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Salesperson": {
+     "end_gain": 18,
+     "end_required": 1000,
+     "int_gain": 36,
+     "int_required": 2000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Security Guard": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 39,
+     "man_required": 3000,
+     "special_ability": "None"
+    },
+    "Store Manager": {
+     "end_gain": 41,
+     "end_required": 4000,
+     "int_gain": 21,
+     "int_required": 2000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    }
+   }
+  },
+  "6": {
+   "name": "Gun Shop",
+   "positions": {
+    "Bookkeeper": {
+     "end_gain": 50,
+     "end_required": 11500,
+     "int_gain": 25,
+     "int_required": 5750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cleaner": {
+     "end_gain": 21,
+     "end_required": 2000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 41,
+     "man_required": 4000,
+     "special_ability": "Cleaner"
+    },
+    "Clerk": {
+     "end_gain": 46,
+     "end_required": 7500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 23,
+     "man_required": 3750,
+     "special_ability": "None"
+    },
+    "Gunsmith": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 26,
+     "int_required": 7500,
+     "man_gain": 52,
+     "man_required": 15000,
+     "special_ability": "None"
+    },
+    "Instructor": {
+     "end_gain": 28,
+     "end_required": 11250,
+     "int_gain": 55,
+     "int_required": 22500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Manager": {
+     "end_gain": 52,
+     "end_required": 15000,
+     "int_gain": 26,
+     "int_required": 7500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 26,
+     "end_required": 7500,
+     "int_gain": 52,
+     "int_required": 15000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    }
+   }
+  },
+  "7": {
+   "name": "Game Shop",
+   "positions": {
+    "Accountant": {
+     "end_gain": 42,
+     "end_required": 4500,
+     "int_gain": 21,
+     "int_required": 2250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cleaner": {
+     "end_gain": 17,
+     "end_required": 750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 34,
+     "man_required": 1500,
+     "special_ability": "Cleaner"
+    },
+    "Clerk": {
+     "end_gain": 39,
+     "end_required": 3000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 20,
+     "man_required": 1500,
+     "special_ability": "None"
+    },
+    "Game Advisor": {
+     "end_gain": 21,
+     "end_required": 2250,
+     "int_gain": 42,
+     "int_required": 4500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Marketer": {
+     "end_gain": 23,
+     "end_required": 3000,
+     "int_gain": 45,
+     "int_required": 6000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Store Manager": {
+     "end_gain": 45,
+     "end_required": 6000,
+     "int_gain": 23,
+     "int_required": 3000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    }
+   }
+  },
+  "8": {
+   "name": "Candle Shop",
+   "positions": {
+    "Bookkeeper": {
+     "end_gain": 38,
+     "end_required": 2500,
+     "int_gain": 19,
+     "int_required": 1250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Chandler": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 21,
+     "int_required": 2250,
+     "man_gain": 42,
+     "man_required": 4500,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 15,
+     "end_required": 500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 30,
+     "man_required": 1000,
+     "special_ability": "Cleaner"
+    },
+    "Quality Controller": {
+     "end_gain": 39,
+     "end_required": 3000,
+     "int_gain": 20,
+     "int_required": 1500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Salesperson": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 17,
+     "int_required": 750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Trainer": {
+     "end_gain": 21,
+     "end_required": 2250,
+     "int_gain": 42,
+     "int_required": 4500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "9": {
+   "name": "Toy Shop",
+   "positions": {
+    "Cleaner": {
+     "end_gain": 19,
+     "end_required": 1250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 38,
+     "man_required": 2500,
+     "special_ability": "Cleaner"
+    },
+    "Marketing Executive": {
+     "end_gain": 25,
+     "end_required": 5000,
+     "int_gain": 49,
+     "int_required": 10000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Office Clerk": {
+     "end_gain": 46,
+     "end_required": 7500,
+     "int_gain": 23,
+     "int_required": 3750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Sales Assistant": {
+     "end_gain": 43,
+     "end_required": 5000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 22,
+     "man_required": 2500,
+     "special_ability": "None"
+    },
+    "Stock Clerk": {
+     "end_gain": 21,
+     "end_required": 2000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 41,
+     "man_required": 4000,
+     "special_ability": "None"
+    },
+    "Store Manager": {
+     "end_gain": 49,
+     "end_required": 10000,
+     "int_gain": 25,
+     "int_required": 5000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Training Advisor": {
+     "end_gain": 26,
+     "end_required": 7500,
+     "int_gain": 52,
+     "int_required": 15000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "10": {
+   "name": "Adult Novelties",
+   "positions": {
+    "Cleaner": {
+     "end_gain": 18,
+     "end_required": 1000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 36,
+     "man_required": 2000,
+     "special_ability": "Cleaner"
+    },
+    "HR Officer": {
+     "end_gain": 25,
+     "end_required": 6000,
+     "int_gain": 50,
+     "int_required": 12000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Marketing Manager": {
+     "end_gain": 24,
+     "end_required": 4000,
+     "int_gain": 47,
+     "int_required": 8000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Receptionist": {
+     "end_gain": 45,
+     "end_required": 6000,
+     "int_gain": 23,
+     "int_required": 3000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Sales Assistant": {
+     "end_gain": 41,
+     "end_required": 4000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 21,
+     "man_required": 2000,
+     "special_ability": "None"
+    },
+    "Sexpert": {
+     "end_gain": 25,
+     "end_required": 5000,
+     "int_gain": 49,
+     "int_required": 10000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Store Manager": {
+     "end_gain": 47,
+     "end_required": 8000,
+     "int_gain": 24,
+     "int_required": 4000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    }
+   }
+  },
+  "11": {
+   "name": "Cyber Cafe",
+   "positions": {
+    "Administrator": {
+     "end_gain": 27,
+     "end_required": 10000,
+     "int_gain": 54,
+     "int_required": 20000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Cashier": {
+     "end_gain": 49,
+     "end_required": 10000,
+     "int_gain": 25,
+     "int_required": 5000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 22,
+     "end_required": 2500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 43,
+     "man_required": 5000,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 54,
+     "end_required": 20000,
+     "int_gain": 27,
+     "int_required": 10000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 27,
+     "end_required": 10000,
+     "int_gain": 54,
+     "int_required": 20000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Receptionist": {
+     "end_gain": 52,
+     "end_required": 15000,
+     "int_gain": 26,
+     "int_required": 7500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Teacher": {
+     "end_gain": 29,
+     "end_required": 15000,
+     "int_gain": 57,
+     "int_required": 30000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Technician": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 53,
+     "int_required": 17500,
+     "man_gain": 27,
+     "man_required": 8750,
+     "special_ability": "None"
+    }
+   }
+  },
+  "12": {
+   "name": "Grocery Store",
+   "positions": {
+    "Accountant": {
+     "end_gain": 48,
+     "end_required": 9000,
+     "int_gain": 24,
+     "int_required": 4500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cart Attendant": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 39,
+     "man_required": 3000,
+     "special_ability": "None"
+    },
+    "Cashier": {
+     "end_gain": 45,
+     "end_required": 6000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 23,
+     "man_required": 3000,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 39,
+     "man_required": 3000,
+     "special_ability": "Cleaner"
+    },
+    "Delivery Driver": {
+     "end_gain": 23,
+     "end_required": 3750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 46,
+     "man_required": 7500,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 50,
+     "end_required": 12000,
+     "int_gain": 25,
+     "int_required": 6000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 25,
+     "end_required": 6000,
+     "int_gain": 50,
+     "int_required": 12000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Stock Clerk": {
+     "end_gain": 21,
+     "end_required": 2250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 42,
+     "man_required": 4500,
+     "special_ability": "None"
+    },
+    "Trainer": {
+     "end_gain": 27,
+     "end_required": 9000,
+     "int_gain": 53,
+     "int_required": 18000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "13": {
+   "name": "Theater",
+   "positions": {
+    "Accountant": {
+     "end_gain": 63,
+     "end_required": 60000,
+     "int_gain": 32,
+     "int_required": 30000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Janitor": {
+     "end_gain": 27,
+     "end_required": 10000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 54,
+     "man_required": 20000,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 65,
+     "end_required": 80000,
+     "int_gain": 33,
+     "int_required": 40000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketing Manager": {
+     "end_gain": 33,
+     "end_required": 40000,
+     "int_gain": 65,
+     "int_required": 80000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Programmer": {
+     "end_gain": 31,
+     "end_required": 25000,
+     "int_gain": 62,
+     "int_required": 50000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Technician": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 32,
+     "int_required": 30000,
+     "man_gain": 63,
+     "man_required": 60000,
+     "special_ability": "None"
+    },
+    "Ticketing Agent": {
+     "end_gain": 54,
+     "end_required": 20000,
+     "int_gain": 27,
+     "int_required": 10000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Usher": {
+     "end_gain": 54,
+     "end_required": 20000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 27,
+     "man_required": 10000,
+     "special_ability": "None"
+    }
+   }
+  },
+  "14": {
+   "name": "Sweet Shop",
+   "positions": {
+    "Bookkeeper": {
+     "end_gain": 39,
+     "end_required": 3000,
+     "int_gain": 20,
+     "int_required": 1500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cleaner": {
+     "end_gain": 15,
+     "end_required": 500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 30,
+     "man_required": 1000,
+     "special_ability": "Cleaner"
+    },
+    "Clerk": {
+     "end_gain": 36,
+     "end_required": 2000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 18,
+     "man_required": 1000,
+     "special_ability": "None"
+    },
+    "Confectionist": {
+     "end_gain": 19,
+     "end_required": 1250,
+     "int_gain": 38,
+     "int_required": 2500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 41,
+     "end_required": 4000,
+     "int_gain": 21,
+     "int_required": 2000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 21,
+     "end_required": 2000,
+     "int_gain": 41,
+     "int_required": 4000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Packager": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 17,
+     "man_required": 750,
+     "special_ability": "None"
+    }
+   }
+  },
+  "15": {
+   "name": "Cruise Line",
+   "positions": {
+    "Bartender": {
+     "end_gain": 59,
+     "end_required": 38500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 30,
+     "man_required": 19250,
+     "special_ability": "None"
+    },
+    "Bosun": {
+     "end_gain": 65,
+     "end_required": 74000,
+     "int_gain": 33,
+     "int_required": 37000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Captain": {
+     "end_gain": 36,
+     "end_required": 77250,
+     "int_gain": 71,
+     "int_required": 154500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Chef": {
+     "end_gain": 32,
+     "end_required": 32250,
+     "int_gain": 64,
+     "int_required": 64500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Deckhand": {
+     "end_gain": 28,
+     "end_required": 13000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 56,
+     "man_required": 26000,
+     "special_ability": "Cleaner"
+    },
+    "Doctor": {
+     "end_gain": 34,
+     "end_required": 51500,
+     "int_gain": 67,
+     "int_required": 103000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Engineer": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 31,
+     "int_required": 27250,
+     "man_gain": 62,
+     "man_required": 54500,
+     "special_ability": "None"
+    },
+    "First Officer": {
+     "end_gain": 34,
+     "end_required": 52500,
+     "int_gain": 67,
+     "int_required": 105000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Marketer": {
+     "end_gain": 32,
+     "end_required": 36000,
+     "int_gain": 64,
+     "int_required": 72000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Receptionist": {
+     "end_gain": 60,
+     "end_required": 42000,
+     "int_gain": 30,
+     "int_required": 21000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Specialist": {
+     "end_gain": 33,
+     "end_required": 45000,
+     "int_gain": 66,
+     "int_required": 90000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Steward": {
+     "end_gain": 60,
+     "end_required": 41500,
+     "int_gain": 30,
+     "int_required": 20750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Ticket Agent": {
+     "end_gain": 56,
+     "end_required": 26000,
+     "int_gain": 28,
+     "int_required": 13000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    }
+   }
+  },
+  "16": {
+   "name": "Television Network",
+   "positions": {
+    "Anchor": {
+     "end_gain": 35,
+     "end_required": 66000,
+     "int_gain": 69,
+     "int_required": 132000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Attorney": {
+     "end_gain": 35,
+     "end_required": 66000,
+     "int_gain": 69,
+     "int_required": 132000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Camera Operator": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 61,
+     "int_required": 49500,
+     "man_gain": 31,
+     "man_required": 24750,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 29,
+     "end_required": 16500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 58,
+     "man_required": 33000,
+     "special_ability": "Cleaner"
+    },
+    "Marketer": {
+     "end_gain": 35,
+     "end_required": 66000,
+     "int_gain": 69,
+     "int_required": 132000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Producer": {
+     "end_gain": 34,
+     "end_required": 49500,
+     "int_gain": 67,
+     "int_required": 99000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Programmer": {
+     "end_gain": 32,
+     "end_required": 33000,
+     "int_gain": 64,
+     "int_required": 66000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Reporter": {
+     "end_gain": 33,
+     "end_required": 41250,
+     "int_gain": 66,
+     "int_required": 82500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Sales Executive": {
+     "end_gain": 61,
+     "end_required": 49500,
+     "int_gain": 31,
+     "int_required": 24750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Secretary": {
+     "end_gain": 67,
+     "end_required": 99000,
+     "int_gain": 34,
+     "int_required": 49500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Stagehand": {
+     "end_gain": 29,
+     "end_required": 16500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 58,
+     "man_required": 33000,
+     "special_ability": "None"
+    },
+    "Writer": {
+     "end_gain": 34,
+     "end_required": 57750,
+     "int_gain": 68,
+     "int_required": 115500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    }
+   }
+  },
+  "18": {
+   "name": "Zoo",
+   "positions": {
+    "Animal Trainer": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 65,
+     "int_required": 72500,
+     "man_gain": 33,
+     "man_required": 36250,
+     "special_ability": "None"
+    },
+    "Aquarist": {
+     "end_gain": 63,
+     "end_required": 58000,
+     "int_gain": 32,
+     "int_required": 29000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Bookkeeper": {
+     "end_gain": 66,
+     "end_required": 87000,
+     "int_gain": 33,
+     "int_required": 43500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cashier": {
+     "end_gain": 57,
+     "end_required": 29000,
+     "int_gain": 29,
+     "int_required": 14500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Consultant": {
+     "end_gain": 36,
+     "end_required": 87000,
+     "int_gain": 72,
+     "int_required": 174000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Intern": {
+     "end_gain": 26,
+     "end_required": 7250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 52,
+     "man_required": 14500,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 68,
+     "end_required": 116000,
+     "int_gain": 34,
+     "int_required": 58000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Photographer": {
+     "end_gain": 34,
+     "end_required": 58000,
+     "int_gain": 68,
+     "int_required": 116000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Veterinarian": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 68,
+     "int_required": 116000,
+     "man_gain": 34,
+     "man_required": 58000,
+     "special_ability": "None"
+    },
+    "Zoo Keeper": {
+     "end_gain": 32,
+     "end_required": 29000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 63,
+     "man_required": 58000,
+     "special_ability": "Cleaner"
+    }
+   }
+  },
+  "19": {
+   "name": "Firework Stand",
+   "positions": {
+    "Advertising Manager": {
+     "end_gain": 18,
+     "end_required": 1000,
+     "int_gain": 36,
+     "int_required": 2000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Bookkeeper": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 17,
+     "int_required": 750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Manager": {
+     "end_gain": 36,
+     "end_required": 2000,
+     "int_gain": 18,
+     "int_required": 1000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Picker Packer": {
+     "end_gain": 13,
+     "end_required": 250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 25,
+     "man_required": 500,
+     "special_ability": "None"
+    },
+    "Pyrotechnician": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 20,
+     "int_required": 1500,
+     "man_gain": 39,
+     "man_required": 3000,
+     "special_ability": "None"
+    },
+    "Salesperson": {
+     "end_gain": 30,
+     "end_required": 1000,
+     "int_gain": 15,
+     "int_required": 500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Trainer": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 39,
+     "int_required": 3000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "20": {
+   "name": "Property Broker",
+   "positions": {
+    "Associate Broker": {
+     "end_gain": 25,
+     "end_required": 500,
+     "int_gain": 13,
+     "int_required": 250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Broker Support": {
+     "end_gain": 21,
+     "end_required": 2250,
+     "int_gain": 42,
+     "int_required": 4500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Cleaner": {
+     "end_gain": 15,
+     "end_required": 500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 30,
+     "man_required": 1000,
+     "special_ability": "Cleaner"
+    },
+    "Graphic Designer": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 39,
+     "int_required": 3000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Property Broker": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 17,
+     "int_required": 750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Receptionist": {
+     "end_gain": 38,
+     "end_required": 2500,
+     "int_gain": 19,
+     "int_required": 1250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Team Manager": {
+     "end_gain": 39,
+     "end_required": 3000,
+     "int_gain": 20,
+     "int_required": 1500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Valuation Specialist": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 39,
+     "int_required": 3000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    }
+   }
+  },
+  "21": {
+   "name": "Furniture Store",
+   "positions": {
+    "Apprentice": {
+     "end_gain": 34,
+     "end_required": 1500,
+     "int_gain": 17,
+     "int_required": 750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 20,
+     "end_required": 1750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 40,
+     "man_required": 3500,
+     "special_ability": "Cleaner"
+    },
+    "Delivery Driver": {
+     "end_gain": 24,
+     "end_required": 4000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 47,
+     "man_required": 8000,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 51,
+     "end_required": 13000,
+     "int_gain": 26,
+     "int_required": 6500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 26,
+     "end_required": 6500,
+     "int_gain": 51,
+     "int_required": 13000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Receptionist": {
+     "end_gain": 49,
+     "end_required": 10000,
+     "int_gain": 25,
+     "int_required": 5000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Sales Clerk": {
+     "end_gain": 45,
+     "end_required": 6500,
+     "int_gain": 23,
+     "int_required": 3250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Trainer": {
+     "end_gain": 27,
+     "end_required": 9750,
+     "int_gain": 54,
+     "int_required": 19500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "22": {
+   "name": "Gas Station",
+   "positions": {
+    "Attendant": {
+     "end_gain": 56,
+     "end_required": 26000,
+     "int_gain": 28,
+     "int_required": 13000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 27,
+     "end_required": 8750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 53,
+     "man_required": 17500,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 63,
+     "end_required": 60000,
+     "int_gain": 32,
+     "int_required": 30000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 30,
+     "end_required": 20000,
+     "int_gain": 60,
+     "int_required": 40000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Trainer": {
+     "end_gain": 32,
+     "end_required": 35250,
+     "int_gain": 64,
+     "int_required": 70500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "23": {
+   "name": "Music Store",
+   "positions": {
+    "Bookkeeper": {
+     "end_gain": 44,
+     "end_required": 5500,
+     "int_gain": 22,
+     "int_required": 2750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cleaner": {
+     "end_gain": 18,
+     "end_required": 1000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 36,
+     "man_required": 2000,
+     "special_ability": "Cleaner"
+    },
+    "Musician": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 48,
+     "int_required": 9000,
+     "man_gain": 24,
+     "man_required": 4500,
+     "special_ability": "None"
+    },
+    "Sales Apprentice": {
+     "end_gain": 30,
+     "end_required": 1000,
+     "int_gain": 15,
+     "int_required": 500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Sales Assistant": {
+     "end_gain": 40,
+     "end_required": 3500,
+     "int_gain": 20,
+     "int_required": 1750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Supervisor": {
+     "end_gain": 46,
+     "end_required": 7000,
+     "int_gain": 23,
+     "int_required": 3500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Trainer": {
+     "end_gain": 25,
+     "end_required": 5250,
+     "int_gain": 49,
+     "int_required": 10500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "24": {
+   "name": "Nightclub",
+   "positions": {
+    "Barback": {
+     "end_gain": 54,
+     "end_required": 20500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 27,
+     "man_required": 10250,
+     "special_ability": "None"
+    },
+    "Bartender": {
+     "end_gain": 57,
+     "end_required": 27000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 29,
+     "man_required": 13500,
+     "special_ability": "None"
+    },
+    "Bouncer": {
+     "end_gain": 31,
+     "end_required": 24000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 61,
+     "man_required": 48000,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 26,
+     "end_required": 6750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 51,
+     "man_required": 13500,
+     "special_ability": "Cleaner"
+    },
+    "Disk-jockey": {
+     "end_gain": 30,
+     "end_required": 20250,
+     "int_gain": 60,
+     "int_required": 40500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 62,
+     "end_required": 54000,
+     "int_gain": 31,
+     "int_required": 27000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Personal Assistant": {
+     "end_gain": 60,
+     "end_required": 40500,
+     "int_gain": 30,
+     "int_required": 20250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Promoter": {
+     "end_gain": 31,
+     "end_required": 27000,
+     "int_gain": 62,
+     "int_required": 54000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Trainer": {
+     "end_gain": 33,
+     "end_required": 40500,
+     "int_gain": 65,
+     "int_required": 81000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "25": {
+   "name": "Pub",
+   "positions": {
+    "Bartender": {
+     "end_gain": 39,
+     "end_required": 3000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 20,
+     "man_required": 1500,
+     "special_ability": "None"
+    },
+    "Bookkeeper": {
+     "end_gain": 42,
+     "end_required": 4500,
+     "int_gain": 21,
+     "int_required": 2250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Bouncer": {
+     "end_gain": 23,
+     "end_required": 3000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 45,
+     "man_required": 6000,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 17,
+     "end_required": 750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 34,
+     "man_required": 1500,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 45,
+     "end_required": 6000,
+     "int_gain": 23,
+     "int_required": 3000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Promoter": {
+     "end_gain": 23,
+     "end_required": 3000,
+     "int_gain": 45,
+     "int_required": 6000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Trainer": {
+     "end_gain": 24,
+     "end_required": 4500,
+     "int_gain": 48,
+     "int_required": 9000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Waiter": {
+     "end_gain": 39,
+     "end_required": 3000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 20,
+     "man_required": 1500,
+     "special_ability": "None"
+    }
+   }
+  },
+  "26": {
+   "name": "Gents Strip Club",
+   "positions": {
+    "Bookkeeper": {
+     "end_gain": 55,
+     "end_required": 22000,
+     "int_gain": 28,
+     "int_required": 11000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cleaner": {
+     "end_gain": 23,
+     "end_required": 3750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 46,
+     "man_required": 7500,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 57,
+     "end_required": 29000,
+     "int_gain": 29,
+     "int_required": 14500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Photographer": {
+     "end_gain": 29,
+     "end_required": 14500,
+     "int_gain": 57,
+     "int_required": 29000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Security Guard": {
+     "end_gain": 29,
+     "end_required": 14500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 57,
+     "man_required": 29000,
+     "special_ability": "None"
+    },
+    "Stripper": {
+     "end_gain": 52,
+     "end_required": 14500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 26,
+     "man_required": 7250,
+     "special_ability": "None"
+    }
+   }
+  },
+  "27": {
+   "name": "Restaurant",
+   "positions": {
+    "Apprentice Chef": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 34,
+     "int_required": 1500,
+     "man_gain": 17,
+     "man_required": 750,
+     "special_ability": "None"
+    },
+    "Chef": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 39,
+     "int_required": 3000,
+     "man_gain": 20,
+     "man_required": 1500,
+     "special_ability": "None"
+    },
+    "Dishwasher": {
+     "end_gain": 17,
+     "end_required": 750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 34,
+     "man_required": 1500,
+     "special_ability": "None"
+    },
+    "Head Chef": {
+     "end_gain": 43,
+     "end_required": 5000,
+     "int_gain": 22,
+     "int_required": 2500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Head Waiter": {
+     "end_gain": 41,
+     "end_required": 4000,
+     "int_gain": 21,
+     "int_required": 2000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Kitchen Assistant": {
+     "end_gain": 17,
+     "end_required": 750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 34,
+     "man_required": 1500,
+     "special_ability": "Cleaner"
+    },
+    "Line Cook": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 38,
+     "int_required": 2500,
+     "man_gain": 19,
+     "man_required": 1250,
+     "special_ability": "None"
+    },
+    "Sous Chef": {
+     "end_gain": 21,
+     "end_required": 2000,
+     "int_gain": 41,
+     "int_required": 4000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Waiter": {
+     "end_gain": 38,
+     "end_required": 2500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 19,
+     "man_required": 1250,
+     "special_ability": "None"
+    }
+   }
+  },
+  "28": {
+   "name": "Oil Rig",
+   "positions": {
+    "Derrick Hand": {
+     "end_gain": 34,
+     "end_required": 47000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 67,
+     "man_required": 94000,
+     "special_ability": "None"
+    },
+    "Driller": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 35,
+     "int_required": 75000,
+     "man_gain": 70,
+     "man_required": 150000,
+     "special_ability": "None"
+    },
+    "Inspector": {
+     "end_gain": 37,
+     "end_required": 112500,
+     "int_gain": 74,
+     "int_required": 225000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Motor Hand": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 34,
+     "int_required": 56250,
+     "man_gain": 68,
+     "man_required": 112500,
+     "special_ability": "None"
+    },
+    "Roughneck": {
+     "end_gain": 33,
+     "end_required": 37500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 65,
+     "man_required": 75000,
+     "special_ability": "Cleaner"
+    },
+    "Sales Executive": {
+     "end_gain": 35,
+     "end_required": 65750,
+     "int_gain": 69,
+     "int_required": 131500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Secretary": {
+     "end_gain": 68,
+     "end_required": 112500,
+     "int_gain": 34,
+     "int_required": 56250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    }
+   }
+  },
+  "29": {
+   "name": "Fitness Center",
+   "positions": {
+    "Cleaner": {
+     "end_gain": 26,
+     "end_required": 7750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 52,
+     "man_required": 15500,
+     "special_ability": "Cleaner"
+    },
+    "Fitness Instructor": {
+     "end_gain": 31,
+     "end_required": 23250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 61,
+     "man_required": 46500,
+     "special_ability": "None"
+    },
+    "HR Officer": {
+     "end_gain": 61,
+     "end_required": 46500,
+     "int_gain": 31,
+     "int_required": 23250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Lifeguard": {
+     "end_gain": 60,
+     "end_required": 39000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 30,
+     "man_required": 19500,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 63,
+     "end_required": 62000,
+     "int_gain": 32,
+     "int_required": 31000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 32,
+     "end_required": 31000,
+     "int_gain": 63,
+     "int_required": 62000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Nutritionist": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 62,
+     "int_required": 54500,
+     "man_gain": 31,
+     "man_required": 27250,
+     "special_ability": "None"
+    },
+    "Personal Trainer": {
+     "end_gain": 29,
+     "end_required": 15500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 58,
+     "man_required": 31000,
+     "special_ability": "None"
+    },
+    "Receptionist": {
+     "end_gain": 49,
+     "end_required": 10000,
+     "int_gain": 25,
+     "int_required": 5000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Swimming Instructor": {
+     "end_gain": 61,
+     "end_required": 46500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 31,
+     "man_required": 23250,
+     "special_ability": "None"
+    }
+   }
+  },
+  "30": {
+   "name": "Mechanic Shop",
+   "positions": {
+    "Apprentice Technician": {
+     "end_gain": 18,
+     "end_required": 1000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 36,
+     "man_required": 2000,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 21,
+     "end_required": 2250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 42,
+     "man_required": 4500,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 53,
+     "end_required": 17000,
+     "int_gain": 27,
+     "int_required": 8500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Receptionist": {
+     "end_gain": 51,
+     "end_required": 13000,
+     "int_gain": 26,
+     "int_required": 6500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Technician": {
+     "end_gain": 24,
+     "end_required": 4250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 47,
+     "man_required": 8500,
+     "special_ability": "None"
+    },
+    "Trainer": {
+     "end_gain": 28,
+     "end_required": 12750,
+     "int_gain": 56,
+     "int_required": 25500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "31": {
+   "name": "Amusement Park",
+   "positions": {
+    "Accountant": {
+     "end_gain": 64,
+     "end_required": 67500,
+     "int_gain": 32,
+     "int_required": 33750,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Entertainer": {
+     "end_gain": 29,
+     "end_required": 17000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 58,
+     "man_required": 34000,
+     "special_ability": "None"
+    },
+    "Inspector": {
+     "end_gain": 35,
+     "end_required": 67500,
+     "int_gain": 70,
+     "int_required": 135000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Janitor": {
+     "end_gain": 28,
+     "end_required": 11250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 55,
+     "man_required": 22500,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 66,
+     "end_required": 90000,
+     "int_gain": 33,
+     "int_required": 45000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 33,
+     "end_required": 45000,
+     "int_gain": 66,
+     "int_required": 90000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Mechanic": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 32,
+     "int_required": 33750,
+     "man_gain": 64,
+     "man_required": 67500,
+     "special_ability": "None"
+    },
+    "Ride Attendant": {
+     "end_gain": 61,
+     "end_required": 45000,
+     "int_gain": 31,
+     "int_required": 22500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Security Guard": {
+     "end_gain": 33,
+     "end_required": 39500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 65,
+     "man_required": 79000,
+     "special_ability": "None"
+    },
+    "Ticket Agent": {
+     "end_gain": 55,
+     "end_required": 22500,
+     "int_gain": 28,
+     "int_required": 11250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    }
+   }
+  },
+  "32": {
+   "name": "Lingerie Store",
+   "positions": {
+    "Cleaner": {
+     "end_gain": 19,
+     "end_required": 1250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 38,
+     "man_required": 2500,
+     "special_ability": "Cleaner"
+    },
+    "HR Officer": {
+     "end_gain": 26,
+     "end_required": 6750,
+     "int_gain": 51,
+     "int_required": 13500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Lingerie Model": {
+     "end_gain": 24,
+     "end_required": 4500,
+     "int_gain": 48,
+     "int_required": 9000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Salesperson": {
+     "end_gain": 42,
+     "end_required": 4500,
+     "int_gain": 21,
+     "int_required": 2250,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Store Manager": {
+     "end_gain": 48,
+     "end_required": 9000,
+     "int_gain": 24,
+     "int_required": 4500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Trainee": {
+     "end_gain": 30,
+     "end_required": 1000,
+     "int_gain": 15,
+     "int_required": 500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    }
+   }
+  },
+  "33": {
+   "name": "Meat Warehouse",
+   "positions": {
+    "Apprentice Butcher": {
+     "end_gain": 20,
+     "end_required": 1500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 39,
+     "man_required": 3000,
+     "special_ability": "None"
+    },
+    "Assistant": {
+     "end_gain": 54,
+     "end_required": 19000,
+     "int_gain": 27,
+     "int_required": 9500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Butcher": {
+     "end_gain": 25,
+     "end_required": 6250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 50,
+     "man_required": 12500,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 23,
+     "end_required": 3250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 45,
+     "man_required": 6500,
+     "special_ability": "Cleaner"
+    },
+    "Manager": {
+     "end_gain": 56,
+     "end_required": 25000,
+     "int_gain": 28,
+     "int_required": 12500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Packer": {
+     "end_gain": 24,
+     "end_required": 4750,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 48,
+     "man_required": 9500,
+     "special_ability": "None"
+    },
+    "Quality Controller": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 56,
+     "int_required": 25000,
+     "man_gain": 28,
+     "man_required": 12500,
+     "special_ability": "None"
+    },
+    "Retailer": {
+     "end_gain": 25,
+     "end_required": 6250,
+     "int_gain": 50,
+     "int_required": 12500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Supervisor": {
+     "end_gain": 30,
+     "end_required": 18750,
+     "int_gain": 59,
+     "int_required": 37500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    }
+   }
+  },
+  "34": {
+   "name": "Farm",
+   "positions": {
+    "Bookkeeper": {
+     "end_gain": 57,
+     "end_required": 28000,
+     "int_gain": 29,
+     "int_required": 14000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Consultant": {
+     "end_gain": 31,
+     "end_required": 27750,
+     "int_gain": 62,
+     "int_required": 55500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Dairy Farmer": {
+     "end_gain": 28,
+     "end_required": 11500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 55,
+     "man_required": 23000,
+     "special_ability": "None"
+    },
+    "Delivery Driver": {
+     "end_gain": 28,
+     "end_required": 11500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 55,
+     "man_required": 23000,
+     "special_ability": "None"
+    },
+    "Farm Manager": {
+     "end_gain": 59,
+     "end_required": 37000,
+     "int_gain": 30,
+     "int_required": 18500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Harvester": {
+     "end_gain": 26,
+     "end_required": 7000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 51,
+     "man_required": 14000,
+     "special_ability": "None"
+    },
+    "Herdsperson": {
+     "end_gain": 27,
+     "end_required": 9250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 54,
+     "man_required": 18500,
+     "special_ability": "None"
+    },
+    "Poultry Farmer": {
+     "end_gain": 27,
+     "end_required": 9250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 54,
+     "man_required": 18500,
+     "special_ability": "None"
+    },
+    "Retailer": {
+     "end_gain": 27,
+     "end_required": 9250,
+     "int_gain": 54,
+     "int_required": 18500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    }
+   }
+  },
+  "35": {
+   "name": "Software Corporation",
+   "positions": {
+    "Analyst": {
+     "end_gain": 59,
+     "end_required": 36000,
+     "int_gain": 30,
+     "int_required": 18000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Apprentice": {
+     "end_gain": 23,
+     "end_required": 3000,
+     "int_gain": 45,
+     "int_required": 6000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Cleaner": {
+     "end_gain": 25,
+     "end_required": 6000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 50,
+     "man_required": 12000,
+     "special_ability": "Cleaner"
+    },
+    "Consultant": {
+     "end_gain": 32,
+     "end_required": 36000,
+     "int_gain": 64,
+     "int_required": 72000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Developer": {
+     "end_gain": 28,
+     "end_required": 12000,
+     "int_gain": 56,
+     "int_required": 24000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Graphic Designer": {
+     "end_gain": 27,
+     "end_required": 9000,
+     "int_gain": 53,
+     "int_required": 18000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Lead Developer": {
+     "end_gain": 61,
+     "end_required": 48000,
+     "int_gain": 31,
+     "int_required": 24000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Marketer": {
+     "end_gain": 31,
+     "end_required": 24000,
+     "int_gain": 61,
+     "int_required": 48000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Tester": {
+     "end_gain": 25,
+     "end_required": 6000,
+     "int_gain": 50,
+     "int_required": 12000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    }
+   }
+  },
+  "36": {
+   "name": "Ladies Strip Club",
+   "positions": {
+    "Bookkeeper": {
+     "end_gain": 56,
+     "end_required": 25000,
+     "int_gain": 28,
+     "int_required": 12500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Cleaner": {
+     "end_gain": 24,
+     "end_required": 4250,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 47,
+     "man_required": 8500,
+     "special_ability": "Cleaner"
+    },
+    "Male Stripper": {
+     "end_gain": 52,
+     "end_required": 14500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 26,
+     "man_required": 7250,
+     "special_ability": "None"
+    },
+    "Manager": {
+     "end_gain": 58,
+     "end_required": 33000,
+     "int_gain": 29,
+     "int_required": 16500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Photographer": {
+     "end_gain": 29,
+     "end_required": 16500,
+     "int_gain": 58,
+     "int_required": 33000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Security Guard": {
+     "end_gain": 29,
+     "end_required": 14500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 57,
+     "man_required": 29000,
+     "special_ability": "None"
+    }
+   }
+  },
+  "37": {
+   "name": "Private Security Firm",
+   "positions": {
+    "Armorer": {
+     "end_gain": 65,
+     "end_required": 80000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 33,
+     "man_required": 40000,
+     "special_ability": "None"
+    },
+    "Chief Strategist": {
+     "end_gain": 36,
+     "end_required": 82500,
+     "int_gain": 71,
+     "int_required": 165000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Comms Engineer": {
+     "end_gain": 33,
+     "end_required": 42500,
+     "int_gain": 66,
+     "int_required": 85000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Company Liaison": {
+     "end_gain": 68,
+     "end_required": 115000,
+     "int_gain": 34,
+     "int_required": 57500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Defense Consultant": {
+     "end_gain": 35,
+     "end_required": 67500,
+     "int_gain": 70,
+     "int_required": 135000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Trainer"
+    },
+    "Disposal Engineer": {
+     "end_gain": 33,
+     "end_required": 42500,
+     "int_gain": 66,
+     "int_required": 85000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Medic": {
+     "end_gain": 33,
+     "end_required": 45000,
+     "int_gain": 66,
+     "int_required": 90000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Cleaner"
+    },
+    "Reconnaissance": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 33,
+     "int_required": 40000,
+     "man_gain": 65,
+     "man_required": 80000,
+     "special_ability": "None"
+    },
+    "Security Contractor": {
+     "end_gain": 32,
+     "end_required": 35000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 64,
+     "man_required": 70000,
+     "special_ability": "None"
+    },
+    "Spokesperson": {
+     "end_gain": 33,
+     "end_required": 40000,
+     "int_gain": 65,
+     "int_required": 80000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Team Leader": {
+     "end_gain": 34,
+     "end_required": 55000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 68,
+     "man_required": 110000,
+     "special_ability": "Manager"
+    }
+   }
+  },
+  "38": {
+   "name": "Mining Corporation",
+   "positions": {
+    "Electrician": {
+     "end_gain": 65,
+     "end_required": 78000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 33,
+     "man_required": 39000,
+     "special_ability": "None"
+    },
+    "Mill Operator": {
+     "end_gain": 33,
+     "end_required": 37500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 65,
+     "man_required": 75000,
+     "special_ability": "None"
+    },
+    "Mine Engineer": {
+     "end_gain": 33,
+     "end_required": 40500,
+     "int_gain": 65,
+     "int_required": 81000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Production Foreman": {
+     "end_gain": 65,
+     "end_required": 79000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 33,
+     "man_required": 39500,
+     "special_ability": "None"
+    },
+    "Safety Inspector": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 67,
+     "int_required": 95000,
+     "man_gain": 34,
+     "man_required": 47500,
+     "special_ability": "Cleaner"
+    },
+    "Sales Executive": {
+     "end_gain": 33,
+     "end_required": 41500,
+     "int_gain": 66,
+     "int_required": 83000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Secretary": {
+     "end_gain": 65,
+     "end_required": 78000,
+     "int_gain": 33,
+     "int_required": 39000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Site Manager": {
+     "end_gain": 34,
+     "end_required": 48750,
+     "int_gain": 67,
+     "int_required": 97500,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    }
+   }
+  },
+  "39": {
+   "name": "Detective Agency",
+   "positions": {
+    "Chief Investigator": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 65,
+     "int_required": 80000,
+     "man_gain": 33,
+     "man_required": 40000,
+     "special_ability": "Manager"
+    },
+    "Client Liaison": {
+     "end_gain": 32,
+     "end_required": 31000,
+     "int_gain": 63,
+     "int_required": 62000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Intelligence Analyst": {
+     "end_gain": 32,
+     "end_required": 29000,
+     "int_gain": 63,
+     "int_required": 58000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Private Investigator": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 61,
+     "int_required": 45000,
+     "man_gain": 31,
+     "man_required": 22500,
+     "special_ability": "None"
+    },
+    "Secretary": {
+     "end_gain": 56,
+     "end_required": 25000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 28,
+     "man_required": 12500,
+     "special_ability": "Secretary"
+    },
+    "Surveillance Technician": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 62,
+     "int_required": 52000,
+     "man_gain": 31,
+     "man_required": 26000,
+     "special_ability": "None"
+    },
+    "Trainee Investigator": {
+     "end_gain": 0,
+     "end_required": 0,
+     "int_gain": 57,
+     "int_required": 28000,
+     "man_gain": 29,
+     "man_required": 14000,
+     "special_ability": "Cleaner"
+    }
+   }
+  },
+  "40": {
+   "name": "Logistics Management",
+   "positions": {
+    "Driver": {
+     "end_gain": 63,
+     "end_required": 57500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 32,
+     "man_required": 28750,
+     "special_ability": "None"
+    },
+    "Forklift Operator": {
+     "end_gain": 63,
+     "end_required": 60000,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 32,
+     "man_required": 30000,
+     "special_ability": "None"
+    },
+    "Lumper": {
+     "end_gain": 31,
+     "end_required": 22500,
+     "int_gain": 0,
+     "int_required": 0,
+     "man_gain": 61,
+     "man_required": 45000,
+     "special_ability": "None"
+    },
+    "Procurement Manager": {
+     "end_gain": 35,
+     "end_required": 70000,
+     "int_gain": 70,
+     "int_required": 140000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Marketer"
+    },
+    "Shift Manager": {
+     "end_gain": 33,
+     "end_required": 45000,
+     "int_gain": 66,
+     "int_required": 90000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Secretary"
+    },
+    "Supply Chain Manager": {
+     "end_gain": 35,
+     "end_required": 62500,
+     "int_gain": 69,
+     "int_required": 125000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Manager"
+    },
+    "Transport Coordinator": {
+     "end_gain": 33,
+     "end_required": 42500,
+     "int_gain": 66,
+     "int_required": 85000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "None"
+    },
+    "Warehouse Manager": {
+     "end_gain": 34,
+     "end_required": 57500,
+     "int_gain": 68,
+     "int_required": 115000,
+     "man_gain": 0,
+     "man_required": 0,
+     "special_ability": "Cleaner"
+    }
+   }
+  }
+ }
+}

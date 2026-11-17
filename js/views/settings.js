@@ -29,6 +29,7 @@
     const counts = ['employees', 'training', 'payments', 'expenses', 'income'].map((k) => `${db.all(k).length} ${k}`).join(' · ');
     const demo = B.hasDemo();
     const onPi = db.mode === 'server';
+    const jobs = DMB.jobs.forTable(s.companyType);
 
     el.innerHTML = `
       ${ui.pageHeader('Settings', 'Company details, lists, appearance and backups.')}
@@ -67,13 +68,13 @@
         ${LISTS.map((cfg) => ui.panel(cfg.title, listEditor(cfg))).join('')}
       </div>
 
-      ${ui.panel('Job limits', `
-        <p class="muted small">The most people you want in each job. Job suggestions on the Employees page give a full job to the strongest people, and point everyone else at their next-best job. Leave a box empty for no limit. Use 0 to never suggest that job.</p>
+      ${ui.panel('Job limits', jobs.hasJobs ? `
+        <p class="muted small">Jobs for your company type, <strong>${esc(jobs.table.name)}</strong>, from Torn. The most people you want in each job. Job suggestions on the Employees page give a full job to the strongest people, and point everyone else at their next-best job. Leave a box empty for no limit. Use 0 to never suggest that job.</p>
         <form id="limits-form" class="form-grid form-grid-limits" novalidate>
           <p class="form-error" role="alert" hidden></p>
-          ${DMB.jobs.JOBS.map((j) => ui.field({ label: j.name, name: j.name, value: s.jobLimits && s.jobLimits[j.name] != null ? String(s.jobLimits[j.name]) : '', placeholder: 'No limit', attrs: 'inputmode="numeric" autocomplete="off" maxlength="2"' })).join('')}
+          ${jobs.JOBS.map((j) => ui.field({ label: j.name, name: j.name, value: s.jobLimits && s.jobLimits[j.name] != null ? String(s.jobLimits[j.name]) : '', placeholder: 'No limit', attrs: 'inputmode="numeric" autocomplete="off" maxlength="2"' })).join('')}
           <div class="field-full form-actions"><button type="submit" class="btn btn-primary">Save limits</button></div>
-        </form>`)}
+        </form>` : '<p class="muted">Your company\'s jobs aren\'t loaded yet. Press <strong>Import from Torn</strong> below and the app will fetch the job list for your company type from Torn.</p>')}
 
       ${ui.panel('Torn API', `
         <p class="muted small">Used when you press <strong>Import from Torn</strong>. The app reads your company (employees, wages, funds, trains available, company news) and shows you a preview before saving anything. Use a <strong>Limited Access</strong> key. ${onPi
@@ -113,7 +114,8 @@
     `;
 
     ui.bindSubmit(el.querySelector('#company-form'), (data) => S.saveSettings(data), { onSuccess() { ui.toast('Settings saved'); } });
-    ui.bindSubmit(el.querySelector('#limits-form'), (data) => S.saveSettings({ jobLimits: data }), { onSuccess() { ui.toast('Job limits saved'); } });
+    const limitsForm = el.querySelector('#limits-form');
+    if (limitsForm) ui.bindSubmit(limitsForm, (data) => S.saveSettings({ jobLimits: data }), { onSuccess() { ui.toast('Job limits saved'); } });
 
     el.querySelectorAll('input[name=theme]').forEach((r) => r.addEventListener('change', () => ui.runAction(() => S.saveSettings({ theme: r.value }))));
 

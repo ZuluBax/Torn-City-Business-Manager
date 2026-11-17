@@ -1,8 +1,9 @@
 # Torn Company Manager
 
 A self-hosted management app for a company in Torn City. It tracks employees, salaries,
-training ("trains"), payments, other income and expenses, and profit. It's built for
-running a Music Store, but works for any company type.
+training ("trains"), payments, other income and expenses, and profit. It works for **any
+of Torn's 39 company types**: the jobs and their stat requirements are loaded from Torn
+for whichever company you direct.
 
 - **Works offline:** open `index.html` and data is saved in your browser.
 - **Or run it on a home server** (for example a Raspberry Pi) so every device shares one copy.
@@ -175,21 +176,32 @@ changes the format, `migrate()` in `js/backup.js` upgrades old backups before im
 
 ---
 
-## Job fit and job suggestions (Music Store)
+## Job fit and job suggestions (any company type)
 
 Each employee's working stats (MAN / INT / END) are compared with the **recommended stats**
-for each Music Store job, taken from the [Torn wiki](https://wiki.torn.com/wiki/Music_Store).
-Staff below the recommended stats can still work; they're just less efficient.
+for each job in **your** company type. Staff below the recommended stats can still work;
+they're just less efficient.
 
-| Job | Needs | Main stat |
-|---|---|---|
-| Sales Apprentice | END 1,000 · INT 500 | END |
-| Cleaner | MAN 2,000 · END 1,000 | MAN |
-| Sales Assistant | END 3,500 · INT 1,750 | END |
-| Bookkeeper | END 5,500 · INT 2,750 | END |
-| Supervisor | END 7,000 · INT 3,500 | END |
-| Musician | INT 9,000 · MAN 4,500 | INT |
-| Trainer | INT 10,500 · END 5,250 | INT |
+**Where the jobs come from.** Torn publishes every company type's jobs, the stats each one
+needs and the stats gained per train (`torn?selections=companies`). When you press
+**Import from Torn**, the app checks your company's type and, if it hasn't got that type's
+job list yet, fetches it and saves it in Settings (`companyType`). It's re-read
+automatically once a month in case Torn rebalances jobs, and never otherwise, so normal
+imports make no extra Torn calls. Until the first import there are no jobs, and the job
+columns and panels just say to import.
+
+**Changing company** (you sold one and run another): the Pi's 15-minute refresh notices the
+new company type and the Dashboard shows *"Torn shows a different company type…"*. Press
+Import from Torn. The preview shows the switch (e.g. *Music Store → Adult Novelties*) and,
+when you import:
+- the positions list becomes the new company's jobs (plus any position still on an employee
+  record, so old history stays filterable),
+- job limits reset to the defaults (1 each for the special-ability jobs: Cleaner, Secretary,
+  Manager, Trainer and Marketer roles),
+- chosen jobs that don't exist in the new company are cleared.
+
+Jobs are ordered easiest → hardest by their main (larger) stat requirement. Many types have
+two jobs with the same main requirement, so ties go to the smaller total, then the name.
 
 **Where you see it (Employees page):**
 - **Job now** and **Suggested job** columns. The suggestion is **bold** when it differs from
@@ -211,8 +223,8 @@ Staff below the recommended stats can still work; they're just less efficient.
 - Each profile shows the same details, including how far short they are and roughly how many
   trains it will take to catch up.
 
-**Job limits (Settings → Job limits):** the most people you want in each job. Cleaner,
-Bookkeeper, Supervisor and Trainer start at **1**. Leave a box empty for no limit, or use
+**Job limits (Settings → Job limits):** the most people you want in each job. Jobs with a
+special ability start at **1**. Leave a box empty for no limit, or use
 **0** to never suggest that job. Torn itself doesn't cap these; it's your own rule.
 
 **How suggestions are picked:**
@@ -234,8 +246,10 @@ Staff who have left, and anyone without working stats, get no suggestion. Sugges
 advice only: the app never changes anyone's position for you. On the Pi, working stats
 refresh by themselves every 15 minutes and just after Torn's daily update (18:10 TCT).
 
-If Torn changes the job table, update `JOBS` in `js/jobs.js`. Nothing else hard-codes these
-numbers.
+Nothing in the code hard-codes a company's jobs. `js/jobs.js` turns Torn's data into a job
+table (`fromTorn`) and every job function works on whichever table is loaded
+(`DMB.jobs.forTable(settings.companyType)`). The tests run against a saved copy of Torn's
+real data for all 39 types (`tests/fixtures/torn-company-types.json`, taken 17 Nov 2026).
 
 ---
 
@@ -334,7 +348,7 @@ css/styles.css        All styling. Colours are CSS variables; light theme via [d
 js/util.js            Dates, money formatting and parsing, escaping (pure, no DOM)
 js/torn.js            Torn API fetch + import plan (preview before saving)
 js/calc.js            ALL financial maths: ledger, salary, summaries, sales by month (pure, unit-tested)
-js/jobs.js            Music Store job table, job fit, ranking, suggestions with job limits and the role advisor (pure, unit-tested)
+js/jobs.js            Job tables from Torn (any company type), job fit, ranking, suggestions with job limits and the role advisor (pure, unit-tested)
 js/db.js              IndexedDB storage with an in-memory copy and atomic multi-record saves
 js/services.js        Business rules: validation, data rules, activity log. The only writer.
 js/ui.js              Shared UI pieces: modal, confirm, toast, tables, badges, icons, filters
@@ -347,7 +361,8 @@ server/server.py      Pi server: SQLite store, /api, Torn polling, daily backups
 deploy/               deploy.sh (test, upload, health check, auto-rollback) and the systemd unit
 tests/calc.test.js    Node unit tests for calc.js and util.js
 tests/jobs.test.js    Node unit tests for jobs.js
-tests/torn*.test.js   Node unit tests for torn.js (import plan, daily log, payment messages)
+tests/torn*.test.js   Node unit tests for torn.js (import plan, daily log, payment messages, company type changes)
+tests/fixtures/       Real Torn job tables for all 39 company types, used by the tests
 backups/              Somewhere to keep exported backup files
 TODO.md               Where we left off, and what's next
 ```
@@ -374,7 +389,7 @@ other by **id**, never by name. Demo records also have `isDemo: true`.
 | `payments` | `employeeId, trainingId (optional), date, amount, paymentType (train/other/refund), notes` |
 | `expenses` | `date, category, description, amount, notes` |
 | `income` | `date, category, description, amount, notes` |
-| `settings` | One record (`key: 'app'`): `companyName, currency, trainPrice, positions[], expenseCategories[], incomeCategories[], theme, jobLimits{jobName: maxPeople}` (a job missing from `jobLimits` has no limit) |
+| `settings` | One record (`key: 'app'`): `companyName, currency, trainPrice, positions[], expenseCategories[], incomeCategories[], theme, jobLimits{jobName: maxPeople}` (a job missing from `jobLimits` has no limit), `companyType{id, name, fetchedAt, jobs[{name, needs{STAT: n}, gains{STAT: n}, special}]}` (null until the first import; checked by `cleanTable` before use because it can arrive from a backup) |
 | `activity` | `at, type, message`. Only the newest 300 are kept. |
 | `effectivenessLog` | One per Torn day, `id` = `date` (`YYYY-MM-DD`): `takenAt, dailyIncome, dailyCustomers, employees{tornId: {total, addiction}}`. Written by the app, not typed in. |
 
@@ -398,8 +413,10 @@ A note on two choices that differ from the original spec:
   estimate counts the time they were away. Edit their start date if that matters.
 - Statuses are fixed (Active, Inactive, Left) because the maths depends on them.
 - Salary is an estimate, not actual Torn payouts.
-- Job suggestions only know the Music Store's jobs. Other company types still work, but
-  they get no job fit or suggestions.
+- One company at a time. If you run two Torn companies, use a second copy of the app.
+- Changing company type doesn't separate the money history. Export a backup and reset
+  first if you want a clean start (the Music Store's final data is archived on the Pi at
+  `~/torn-company-manager/archive/music-store-final-2026-11-17.db`).
 - Data is saved per browser and per address (see "Running it").
 - Effectiveness history only covers days when the Pi (or an import) took a reading. Missed
   days stay blank, and nothing from before 17 Oct 2026 can be recovered.

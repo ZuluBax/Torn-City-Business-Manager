@@ -127,7 +127,9 @@
     return db.RECORD_STORES.some((s) => s !== 'activity' && db.all(s).some((r) => r.isDemo));
   }
 
-  function buildDemo(trainPrice) {
+  // jobNames: the loaded company type's jobs (easiest first), so demo staff look like yours.
+  function buildDemo(trainPrice, jobNames) {
+    const job = (i) => (jobNames && jobNames.length ? jobNames[Math.min(i, jobNames.length - 1)] : 'Employee');
     const t = U.todayISO();
     const d = (n) => U.addDays(t, n);
     const now = new Date().toISOString();
@@ -137,12 +139,12 @@
       name, tornId, position, status, startDate: start, endDate: null, workingStats: '', notes: 'Demo record — safe to remove.',
       reasonForLeaving: '', salaryHistory: [{ effectiveFrom: start, salaryPerDay: salary }], ...extra,
     });
-    const e1 = emp('[DEMO] Alex Example', '9000001', 'Supervisor', 45000, d(-90), 'active', {
+    const e1 = emp('[DEMO] Alex Example', '9000001', job(4), 45000, d(-90), 'active', {
       salaryHistory: [{ effectiveFrom: d(-90), salaryPerDay: 35000 }, { effectiveFrom: d(-30), salaryPerDay: 45000 }],
     });
-    const e2 = emp('[DEMO] Sam Placeholder', '9000002', 'Sales Assistant', 25000, d(-60), 'active');
-    const e3 = emp('[DEMO] Jo Testcase', '9000003', 'Musician', 30000, d(-40), 'inactive');
-    const e4 = emp('[DEMO] Riley Sample', '9000004', 'Cleaner', 15000, d(-120), 'left', { endDate: d(-50), reasonForLeaving: 'Demo: moved company' });
+    const e2 = emp('[DEMO] Sam Placeholder', '9000002', job(1), 25000, d(-60), 'active');
+    const e3 = emp('[DEMO] Jo Testcase', '9000003', job(2), 30000, d(-40), 'inactive');
+    const e4 = emp('[DEMO] Riley Sample', '9000004', job(0), 15000, d(-120), 'left', { endDate: d(-50), reasonForLeaving: 'Demo: moved company' });
     const employees = [e1, e2, e3, e4];
 
     const tr = (e, date, count, type, price) => mk({ employeeId: e.id, date, trainCount: count, trainType: type, pricePerTrain: price, totalAmount: count * price, notes: '' });
@@ -170,7 +172,7 @@
 
   async function loadDemo() {
     if (hasDemo()) throw new Error('Demo data is already loaded.');
-    const demo = buildDemo(db.settings().trainPrice);
+    const demo = buildDemo(db.settings().trainPrice, DMB.jobs.forTable(db.settings().companyType).JOBS.map((j) => j.name));
     const clash = demo.employees.find((e) => db.all('employees').some((x) => x.tornId === e.tornId));
     if (clash) throw new Error(`Torn ID ${clash.tornId} is already used by a real employee.`);
     const ops = [];

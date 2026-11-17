@@ -1,7 +1,7 @@
 /*
  * IndexedDB persistence with an in-memory mirror.
  *
- * All records are loaded into memory once at startup (a music store's data is small), so
+ * All records are loaded into memory once at startup (one Torn company's data is small), so
  * views and calculations read synchronously. Every write goes to IndexedDB first and the
  * memory copy is only updated once the transaction has committed — if a write fails, the
  * screen never shows data that wasn't actually saved.
@@ -21,7 +21,8 @@
     companyName: 'My Company',
     currency: '$',
     trainPrice: 420000,
-    positions: ['Sales Apprentice', 'Sales Assistant', 'Cleaner', 'Musician', 'Supervisor', 'Bookkeeper', 'Trainer'],
+    // Replaced by your company's real jobs on the first Import from Torn.
+    positions: ['Employee'],
     expenseCategories: ['Stock', 'Advertising', 'Company upgrades', 'Staff bonus', 'Other'],
     incomeCategories: ['Other sales', 'Investment', 'Other'],
     theme: 'dark',
@@ -31,7 +32,10 @@
     tornCompany: null,       // last company snapshot from the Torn API (funds, trains available…)
     tornLastSync: null,
     tornSetupImported: false, // the one-off "setup spend" expense has been imported
-    jobLimits: { ...DMB.jobs.DEFAULT_LIMITS }, // most people per job, for job suggestions (js/jobs.js)
+    // Your company type's jobs from Torn: { id, name, jobs[], fetchedAt } (js/jobs.js). null until
+    // the first Import from Torn, and job suggestions stay hidden until then.
+    companyType: null,
+    jobLimits: {},           // most people per job; set to defaults when the company type is loaded
   };
 
   let db = null;

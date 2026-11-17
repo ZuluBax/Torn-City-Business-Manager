@@ -9,16 +9,18 @@
   const isNode = typeof module === 'object' && module.exports;
   const util = isNode ? require('./util.js') : root.DMB.util;
   const calc = isNode ? require('./calc.js') : root.DMB.calc;
-  const api = factory(util, calc);
+  const jobs = isNode ? require('./jobs.js') : root.DMB.jobs;
+  const api = factory(util, calc, jobs);
   if (isNode) module.exports = api;
   else { root.DMB = root.DMB || {}; root.DMB.torn = api; }
-})(typeof self !== 'undefined' ? self : this, function (U, C) {
+})(typeof self !== 'undefined' ? self : this, function (U, C, JOBS) {
   'use strict';
 
   const API_URL = 'https://api.torn.com/company/';
   const SELECTIONS = 'profile,employees,detailed,news';
   const TIMEOUT_MS = 15000;
   const KEY_PATTERN = /^[A-Za-z0-9]{16}$/;
+  const TYPES_URL = 'https://api.torn.com/torn/?selections=companies&comment=TornCompanyManager&key=';
 
   // Friendly text for the Torn error codes a director is likely to hit.
   const ERROR_HELP = {
@@ -37,10 +39,24 @@
 
   // viaServer: when the app runs from the Pi, the Pi holds the key and fetches on our behalf.
   async function fetchCompany(key, { viaServer = false } = {}) {
+    const data = await getTorn(key, viaServer, 'api/torn/company', `${API_URL}?selections=${SELECTIONS}&comment=TornCompanyManager&key=`);
+    if (!data.company || !data.company_employees || !data.company_detailed) throw new Error('Torn\'s reply was missing company data. Are you the director?');
+    return data;
+  }
+
+  // Torn's list of every company type with its jobs -> { typeId: entry }. Only fetched when
+  // the saved job table is missing, stale or for a different type (see needsTypeRefresh).
+  async function fetchCompanyTypes(key, { viaServer = false } = {}) {
+    const data = await getTorn(key, viaServer, 'api/torn/companytypes', TYPES_URL);
+    if (!data.companies || typeof data.companies !== 'object') throw new Error('Torn\'s reply was missing the list of company types.');
+    return data.companies;
+  }
+
+  async function getTorn(key, viaServer, serverPath, directUrl) {
     if (!viaServer && !KEY_PATTERN.test(key || '')) throw new Error('Add a valid 16-character Torn API key in Settings first.');
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS + 2000);
-    const url = viaServer ? 'api/torn/company' : `${API_URL}?selections=${SELECTIONS}&comment=TornCompanyManager&key=${encodeURIComponent(key)}`;
+    const url = viaServer ? serverPath : directUrl + encodeURIComponent(key);
     let res;
     try {
       res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
@@ -58,8 +74,41 @@
     let data;
     try { data = await res.json(); } catch (e) { throw new Error('Torn sent back something unexpected.'); }
     if (data.error) throw new Error(ERROR_HELP[data.error.code] || `Torn error: ${data.error.error || 'unknown'}`);
-    if (!data.company || !data.company_employees || !data.company_detailed) throw new Error('Torn\'s reply was missing company data. Are you the director?');
     return data;
+  }
+
+  // ---------- Company type (which job table applies) ----------
+
+  const TYPE_TABLE_MAX_AGE_DAYS = 30; // Torn rarely rebalances jobs; a monthly re-read catches it
+
+  // True when the saved job table can't be trusted for this company: none yet, a different
+  // type (you sold one company and run another), or older than a month.
+  function needsTypeRefresh(savedTable, typeId, nowMs) {
+    if (!Number.isInteger(typeId)) return false; // Torn didn't say; nothing to compare against
+    if (!savedTable || savedTable.id !== typeId) return true;
+    const at = Date.parse(savedTable.fetchedAt || '');
+    return !Number.isFinite(at) || nowMs - at > TYPE_TABLE_MAX_AGE_DAYS * 86400000;
+  }
+
+  /*
+   * What saving a newly fetched job table changes -> { table, typeChanged, positions, jobLimits,
+   * clearChosen: [employee ids] }. Pure, so it's unit tested.
+   *  - Same type (a monthly re-read): only the table is replaced; your limits and positions stay.
+   *  - New type: positions become the new jobs (plus any still on an employee record, so
+   *    history keeps its filter), limits reset to the defaults, and chosen jobs that don't
+   *    exist in the new company are cleared.
+   */
+  function companyTypeUpdate(newTable, saved, employees) {
+    const typeChanged = !saved.companyType || saved.companyType.id !== newTable.id;
+    const out = { table: newTable, typeChanged, positions: null, jobLimits: null, clearChosen: [] };
+    if (!typeChanged) return out;
+    const names = newTable.jobs.map((j) => j.name);
+    const known = new Set(names);
+    const inUse = (employees || []).map((e) => e.position).filter((p) => p && !known.has(p));
+    out.positions = [...names, ...new Set(inUse)];
+    out.jobLimits = JOBS.defaultLimits(newTable.jobs);
+    out.clearChosen = (employees || []).filter((e) => e.chosenJob && !known.has(e.chosenJob)).map((e) => e.id);
+    return out;
   }
 
   const stripTags = (s) => String(s || '').replace(/<[^>]+>/g, '');
@@ -69,7 +118,7 @@
   function companySnapshot(data, fetchedAt) {
     const c = data.company, d = data.company_detailed;
     return {
-      id: c.ID, name: c.name, rating: c.rating,
+      id: c.ID, name: c.name, rating: c.rating, typeId: Number.isInteger(c.company_type) ? c.company_type : null,
       employeesHired: c.employees_hired, employeesCapacity: c.employees_capacity,
       dailyIncome: c.daily_income, weeklyIncome: c.weekly_income, daysOld: c.days_old,
       dailyCustomers: c.daily_customers, weeklyCustomers: c.weekly_customers,
@@ -273,7 +322,7 @@
   }
 
   return {
-    KEY_PATTERN, fetchCompany, buildPlan, companySnapshot, lastActiveMap, effectivenessMap, effectivenessLogDate, effectivenessLogEntry, sameLogEntry, setupSpend, isEmpty, stripTags,
+    KEY_PATTERN, fetchCompany, fetchCompanyTypes, needsTypeRefresh, companyTypeUpdate, buildPlan, companySnapshot, lastActiveMap, effectivenessMap, effectivenessLogDate, effectivenessLogEntry, sameLogEntry, setupSpend, isEmpty, stripTags,
     EVENTS_URL, fetchEvents, isMoneyEvent, parseMoneyEvent, trainCountFrom, classifyMoneyEvent,
   };
 });

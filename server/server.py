@@ -13,6 +13,7 @@ this server is a small, careful document store:
   POST /api/commit   {baseVersion, ops:[{store, put|del}]}  -> {"version": n}  (409 on conflict)
   POST /api/replace  {data, activity, clearSecrets}         -> {"version": n}
   GET  /api/torn/company           -> Torn API reply, fetched here with the stored key
+  GET  /api/torn/companytypes      -> Torn's job tables for every company type (same key)
 
 Background thread: refreshes the Torn company snapshot and employees' working stats every
 15 minutes and writes a daily backup.
@@ -40,6 +41,11 @@ SECRET_FIELD = "tornApiKey"
 MAX_BODY = 20 * 1024 * 1024
 STATIC_ROOTS = {"css", "js", "assets"}
 TORN_URL = "https://api.torn.com/company/?selections=profile,employees,detailed,news&comment=TornCompanyManager&key="
+# Every company type's jobs (required stats, gains). Only fetched on Import, when the app's
+# saved job table is missing, a month old, or for a different company type.
+TORN_TYPES_URL = "https://api.torn.com/torn/?selections=companies&comment=TornCompanyManager&key="
+# Browser paths the Pi answers by calling Torn with the stored key (browsers never see it).
+TORN_PROXY = {"/api/torn/company": TORN_URL, "/api/torn/companytypes": TORN_TYPES_URL}
 TORN_REFRESH_SECONDS = 900  # also feeds the employees' "last active" timers, so hourly is too stale
 TORN_EVENTS_URL = "https://api.torn.com/user/?selections=events&comment=TornCompanyManager&key="
 TORN_EVENTS_SECONDS = 900  # Torn only returns the latest events, so poll often enough not to miss any
@@ -393,6 +399,7 @@ def snapshot_from_torn(data: dict) -> dict:
     c, d = data["company"], data["company_detailed"]
     return {
         "id": c.get("ID"), "name": c.get("name"), "rating": c.get("rating"),
+        "typeId": c["company_type"] if isinstance(c.get("company_type"), int) and not isinstance(c.get("company_type"), bool) else None,
         "employeesHired": c.get("employees_hired"), "employeesCapacity": c.get("employees_capacity"),
         "dailyIncome": c.get("daily_income"), "weeklyIncome": c.get("weekly_income"), "daysOld": c.get("days_old"),
         "dailyCustomers": c.get("daily_customers"), "weeklyCustomers": c.get("weekly_customers"),
@@ -536,9 +543,9 @@ def make_handler(store: Store, app_dir: Path):
                     return self._json(200, {"version": store.version()})
                 if path == "/api/state":
                     return self._json(200, store.state())
-                if path == "/api/torn/company":
+                if path in TORN_PROXY:
                     try:
-                        return self._send(200, fetch_torn(store.torn_key()))
+                        return self._send(200, fetch_torn(store.torn_key(), TORN_PROXY[path]))
                     except TornHTTPError as e:
                         log.warning("Torn import: Torn answered HTTP %s", e.status)
                         return self._json(503, {"error": f"Torn refused the request (HTTP {e.status}). Try again in a few minutes."})

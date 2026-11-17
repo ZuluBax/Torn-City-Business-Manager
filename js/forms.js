@@ -297,6 +297,21 @@
           return;
         }
         const snapshot = DMB.torn.companySnapshot(data, new Date().toISOString());
+
+        // The job table: only fetched when ours is missing, a month old or for another company
+        // type. If that call fails the staff import still works; job advice just waits.
+        let typeUpdate = null, typeError = '';
+        if (DMB.torn.needsTypeRefresh(db.settings().companyType, snapshot.typeId, Date.now())) {
+          try {
+            const types = await DMB.torn.fetchCompanyTypes(key, { viaServer: db.mode === 'server' });
+            const table = DMB.jobs.fromTorn(snapshot.typeId, types[String(snapshot.typeId)]);
+            if (!table) throw new Error('Torn has no job list for this company type.');
+            typeUpdate = DMB.torn.companyTypeUpdate({ ...table, fetchedAt: new Date().toISOString() }, db.settings(), db.all('employees'));
+          } catch (err) {
+            typeError = err.message;
+          }
+        }
+
         const plan = DMB.torn.buildPlan(data, {
           employees: db.all('employees'), currentSalary: (e) => C.currentSalary(e),
           positions: db.settings().positions, setupImported: db.settings().tornSetupImported,
@@ -315,7 +330,13 @@
         ].filter(Boolean).join(' · ');
 
         const s = plan.setup;
+        const oldType = db.settings().companyType;
+        const typeNote = typeUpdate && typeUpdate.typeChanged
+          ? `<div class="review-alert" role="status">${ui.icon('alert')}<span>Company type: ${oldType ? `${esc(oldType.name)} → ` : ''}<strong>${esc(typeUpdate.table.name)}</strong>.
+              Importing sets up its ${typeUpdate.table.jobs.length} jobs (${typeUpdate.table.jobs.map((j) => esc(j.name)).join(', ')}), replaces your positions list and resets job limits${typeUpdate.clearChosen.length ? `, and clears ${typeUpdate.clearChosen.length} chosen job${typeUpdate.clearChosen.length === 1 ? '' : 's'} that don't exist here` : ''}.</span></div>`
+          : (typeError ? `<p class="form-error">Couldn't load your company's job list: ${esc(typeError)} Staff can still be imported; import again later for job suggestions.</p>` : '');
         box.innerHTML = `
+          ${typeNote}
           <div class="torn-company">
             <div><span class="muted small">Company</span><strong>${esc(snapshot.name)}</strong></div>
             <div><span class="muted small">Company funds</span><strong>${ui.money(snapshot.funds)}</strong></div>
@@ -330,16 +351,16 @@
           ${section('No longer in your Torn company', 'Tick to mark them as Left today. Their history is kept.', plan.gone.map((g) => check('gone', g.id, false, esc(g.name), `Torn ID ${esc(g.tornId)}`)))}
           ${s ? section('Money already spent', '', [check('setup', 'setup', true, `Company setup & upgrades: ${ui.money(s.amount)}`,
             `Added as one expense dated ${U.formatDate(s.date)}. Worked out as deposits ${ui.money(s.deposits)} − withdrawals ${ui.money(s.withdrawals)} − funds left ${ui.money(s.fundsLeft)}. Covers ${s.upgrades} upgrades (${esc(s.kinds.join(', '))}). The price you paid to start the company isn't in Torn's company data — add it as an expense yourself.`)]) : ''}
-          ${plan.positions.length ? `<p class="small muted">New positions will be added to Settings: ${plan.positions.map(esc).join(', ')}.</p>` : ''}
-          ${DMB.torn.isEmpty(plan) ? '<p class="muted">Everything already matches Torn. Importing will just refresh the company figures.</p>' : ''}`;
+          ${plan.positions.length && !(typeUpdate && typeUpdate.typeChanged) ? `<p class="small muted">New positions will be added to Settings: ${plan.positions.map(esc).join(', ')}.</p>` : ''}
+          ${DMB.torn.isEmpty(plan) && !typeUpdate ? '<p class="muted">Everything already matches Torn. Importing will just refresh the company figures.</p>' : ''}`;
         apply.disabled = false;
-        apply.textContent = DMB.torn.isEmpty(plan) ? 'Refresh company figures' : 'Import selected';
+        apply.textContent = DMB.torn.isEmpty(plan) && !typeUpdate ? 'Refresh company figures' : 'Import selected';
 
         apply.addEventListener('click', async () => {
           const picked = (g) => new Set([...box.querySelectorAll(`[data-group="${g}"]:checked`)].map((c) => c.value));
           apply.disabled = true;
           try {
-            const summary = await S.applyTornImport(plan, { newEmployees: picked('newEmployees'), updates: picked('updates'), gone: picked('gone'), setup: picked('setup').size > 0 }, snapshot);
+            const summary = await S.applyTornImport(plan, { newEmployees: picked('newEmployees'), updates: picked('updates'), gone: picked('gone'), setup: picked('setup').size > 0 }, snapshot, typeUpdate);
             close();
             ui.toast(summary.length ? `Imported: ${summary.join(', ')}` : 'Company figures refreshed');
           } catch (err) {
