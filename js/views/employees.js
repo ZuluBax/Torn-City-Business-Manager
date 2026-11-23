@@ -39,6 +39,12 @@
 
   function autoFitBadge(e, fit, sug, tag) {
     const why = sug.lostTo.length ? ` ${lostText(sug.lostTo)}.` : '';
+    // Placed below stats to fill the line-up in Settings → Job limits (nobody closer was free).
+    if (sug.below) {
+      const short = shortText(J().shortfall(fit.stats, J().findJob(sug.job)));
+      const title = `Fills a ${sug.job} place in your line-up. Short by ${short}; they still work there, just less effectively.`;
+      return sug.job === e.position ? tag('amber', 'Right job · below stats', title) : tag('amber', `Move to ${sug.job} · below stats`, title);
+    }
     const target = sug.job ? `Suggest ${sug.job}` : 'No open job fits';
     if (fit.current && !fit.current.meets) return tag('amber', `Below stats · ${target}`, `Short of ${fit.current.job} by ${shortText(fit.current.short)}${trainsText(fit.current.trains)}.${why}`);
     if (!fit.current) return tag(sug.job ? 'blue' : 'muted', target, `"${e.position}" isn't one of the ${J().table.name} jobs.${why}`);
@@ -147,13 +153,18 @@
   const nearText = (c) => `${ui.employeeLink(c.employee.id)} <span class="small muted">${esc(shortText(c.short))} short${esc(trainsText(c.trains))}</span>`;
 
   // The pretend newcomer from the New hire check isn't in the database, so it can't be a link.
-  const personLink = (e) => (e.id === J().HIRE_ID ? `<strong>${esc(e.name)}</strong> <span class="badge badge-blue">New hire</span>` : ui.employeeLink(e.id));
+  const personLink = (e) => {
+    if (e.id !== J().HIRE_ID) return ui.employeeLink(e.id);
+    // The default name already says "New hire"; only tag a typed-in name.
+    return e.name === 'New hire' ? '<strong>New hire</strong>' : `<strong>${esc(e.name)}</strong> <span class="badge badge-blue">New hire</span>`;
+  };
 
   function movesHtml(advice) {
     if (!advice.moves.length && !advice.stuck.length) return '<p class="muted">Everyone is already in the best job for their stats.</p>';
     const items = advice.moves.map((m) => {
       const tags = [
         m.belowNow ? `<span class="badge badge-amber" title="Their stats are below what ${esc(m.from)} recommends.">Below stats now</span>` : '',
+        m.belowTarget ? `<span class="badge badge-amber" title="Nobody free meets ${esc(m.to)} yet, so the closest person fills the place in your line-up.">Below stats for ${esc(m.to)}</span>` : '',
         m.chosen ? '<span class="badge badge-blue" title="You picked this job for them.">Your choice</span>' : '',
       ].filter(Boolean).join(' ');
       const from = m.employee.id === J().HIRE_ID ? 'joins' : esc(m.from);
@@ -194,7 +205,8 @@
     const p = J().previewHire(db.all('employees'), db.settings().jobLimits, stats, hireCheck.name);
     if (!p) return '<p class="form-error" role="alert">Those stats look wrong. Use whole numbers from 0 up.</p>';
     const name = esc(p.hire.name);
-    const move = (c) => `<li>${ui.employeeLink(c.employee.id)}: ${c.from ? esc(c.from) : 'no job'} → <strong>${c.to ? esc(c.to) : 'no job fits'}</strong></li>`;
+    // from/to are suggestions (without vs with the hire), which can differ from their job on Torn.
+    const move = (c) => `<li>${ui.employeeLink(c.employee.id)} <span class="small muted">(${esc(c.employee.position)} now)</span>: would have been ${c.from ? esc(c.from) : 'without a place'}, now <strong>${c.to ? esc(c.to) : 'no place left'}</strong></li>`;
     const parts = [];
     if (p.job) {
       parts.push(`<p><strong>${name}</strong> would go in <strong>${esc(p.job)}</strong>.</p>`);
@@ -254,7 +266,7 @@
     if (!staff.some((e) => e.status !== 'left' && J().parseStats(e.workingStats))) {
       return '<p class="muted">No working stats yet. Import from Torn to fetch them, then this will show who suits each role.</p>';
     }
-    const caveat = '<p class="small muted">Based on Torn\'s recommended stats and your job limits in Settings, using the latest working stats the app has. Train counts are rough (as if they train in that job). It doesn\'t weigh effectiveness or addiction, and nothing changes on Torn until you move people there.</p>';
+    const caveat = '<p class="small muted">Based on Torn\'s recommended stats and your job limits in Settings, using the latest working stats the app has. A job with a limit is filled to that number: if too few people meet its stats, the closest fill it, marked below stats. Train counts are rough (as if they train in that job). It doesn\'t weigh effectiveness or addiction, and nothing changes on Torn until you move people there.</p>';
     const moves = `<h3 class="sub-heading">Suggested moves</h3>${movesHtml(advice)}`;
     if (compact) return moves + caveat;
     const table = `<h3 class="sub-heading">By role (hardest first)</h3>` + ui.table({

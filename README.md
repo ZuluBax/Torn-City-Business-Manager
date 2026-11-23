@@ -233,16 +233,19 @@ two jobs with the same main requirement, so ties go to the smaller total, then t
 - Each profile shows the same details, including how far short they are and roughly how many
   trains it will take to catch up.
 
-**Job limits (Settings → Job limits):** the most people you want in each job. Jobs with a
-special ability start at **1**. Leave a box empty for no limit, or use
+**Job limits (Settings → Job limits):** how many people you want in each job (your line-up).
+Jobs with a special ability start at **1**. Leave a box empty for no limit, or use
 **0** to never suggest that job. Torn itself doesn't cap these; it's your own rule.
 
 **How suggestions are picked:**
-1. Jobs are filled hardest first (Trainer down to Sales Apprentice).
+1. Jobs are filled hardest first (the top job down to the entry job).
 2. A job with a limit goes to the **strongest** people who meet it, even if someone else holds
    it today. Everyone else who meets it drops to their next-best job.
-3. A job with no limit takes everyone left who meets it.
-4. So each person is suggested the hardest job they meet that still has room.
+3. If too few people meet a limited job, the remaining places are **filled anyway** by the
+   people closest to its stats (fewest trains), and marked *below stats*. Torn lets people
+   work below the recommended stats, just less effectively. Since 23 Nov 2026.
+4. A job with no limit takes everyone left who meets it, and is never filled below stats.
+5. So the line-up stays full, with the strongest people in the hardest jobs.
 
 **Choosing the job yourself:** when someone's stats meet two or more jobs, the Suggested job
 column (and their profile) shows a dropdown. *Automatic* uses the rules above. Picking a job

@@ -116,9 +116,12 @@ const TEAM = [
   { id: 'nostats', name: 'NoStats', position: 'Cleaner', workingStats: '' },
 ];
 const jobsOf = (m) => Object.fromEntries([...m].map(([id, s]) => [id, s.job]));
+// Only Cleaner is limited, and people meet it, so no below-stats filling kicks in: these tests
+// check how people who meet the stats are ranked. Filling is tested further down.
+const CLEANER_ONLY = { Cleaner: 1 };
 
 test('suggestJobs: the strongest gets a 1-person job, the rest drop to their next best', () => {
-  const m = J.suggestJobs(TEAM, J.DEFAULT_LIMITS);
+  const m = J.suggestJobs(TEAM, CLEANER_ONLY);
   assert.deepEqual(jobsOf(m), {
     shy: 'Sales Assistant', // meets Sales Assistant (no limit), which is harder than Cleaner
     lulu: 'Cleaner', // highest MAN of those left, so Cleaner is theirs
@@ -179,7 +182,7 @@ const roleOf = (advice, name) => advice.roles.find((r) => r.job === name);
 const names = (list) => list.map((x) => (x.employee || x).name);
 
 test('adviseRoles: every job is listed, hardest first, with who fits and who holds it now', () => {
-  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  const a = J.adviseRoles(TEAM, CLEANER_ONLY);
   assert.deepEqual(a.roles.map((r) => r.job), [...J.JOBS].reverse().map((j) => j.name));
   const cleaner = roleOf(a, 'Cleaner');
   assert.deepEqual(names(cleaner.best), ['Strongest1'], 'the suggested holder, not whoever has it on Torn');
@@ -190,7 +193,7 @@ test('adviseRoles: every job is listed, hardest first, with who fits and who hol
 });
 
 test('adviseRoles: nobody qualifies -> best is empty and the closest are ranked by trains', () => {
-  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  const a = J.adviseRoles(TEAM, CLEANER_ONLY);
   const sup = roleOf(a, 'Supervisor'); // END 7,000 / INT 3,500
   assert.deepEqual(sup.best, []);
   // Strongest1 is only INT 1,831 short (80 trains at 23 INT); Boss1 END 1,886 short (41 at 46 END).
@@ -208,7 +211,7 @@ test('adviseRoles: equal trains break on smaller total shortfall, then name', ()
 
 test('adviseRoles: staff who left and staff without stats are never suggested', () => {
   const gone = { id: 'gone', name: 'Gone', status: 'left', position: 'Trainer', workingStats: 'MAN 99999 / INT 99999 / END 99999' };
-  const a = J.adviseRoles([...TEAM, gone], J.DEFAULT_LIMITS);
+  const a = J.adviseRoles([...TEAM, gone], CLEANER_ONLY);
   const trainer = roleOf(a, 'Trainer');
   assert.deepEqual(trainer.best, []);
   assert.deepEqual(trainer.heldNow, [], 'someone who left does not hold a job');
@@ -218,7 +221,7 @@ test('adviseRoles: staff who left and staff without stats are never suggested', 
 });
 
 test('adviseRoles: moves list who should change job, hardest destination first', () => {
-  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  const a = J.adviseRoles(TEAM, CLEANER_ONLY);
   assert.deepEqual(a.moves.map((m) => [m.employee.name, m.from, m.to, m.belowNow]), [
     ['Boss1', 'Supervisor', 'Sales Assistant', true],
     ['Strongest1', 'Sales Apprentice', 'Cleaner', false],
@@ -284,7 +287,7 @@ test('Adult Novelties: job fit and suggestions use the new table', () => {
   assert.equal(fit.verdict, 'better');
   assert.equal(fit.best, 'Sexpert');
   assert.deepEqual(fit.qualifies, ['Cleaner', 'Sales Assistant', 'Receptionist', 'Marketing Manager', 'Sexpert']);
-  assert.equal(AN.suggestJobs([sa], AN.DEFAULT_LIMITS).get('a').job, 'Sexpert');
+  assert.equal(AN.suggestJobs([sa], {}).get('a').job, 'Sexpert');
   // A Music Store position isn't a job here, so they're "unassigned" and still get advice.
   assert.equal(AN.jobFit({ ...sa, position: 'Musician' }).verdict, 'unassigned');
 });
@@ -349,7 +352,7 @@ test('fromTorn: a malformed Torn entry gives null', () => {
 // ---------- Who replaces whom, and the new hire check ----------
 
 test('adviseRoles: a move into a full limited job names who it replaces', () => {
-  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  const a = J.adviseRoles(TEAM, CLEANER_ONLY);
   const move = (name) => a.moves.find((m) => m.employee.name === name);
   // Cleaner has a limit of 1. Cleaner1 and NoStats hold it on Torn; Strongest1 takes it.
   assert.deepEqual(names(move('Strongest1').replaces), ['Cleaner1', 'NoStats']);
@@ -358,7 +361,7 @@ test('adviseRoles: a move into a full limited job names who it replaces', () => 
 });
 
 test('previewHire: a stronger newcomer takes the limited job and the old holder drops down', () => {
-  const p = J.previewHire(TEAM, J.DEFAULT_LIMITS, { MAN: 9000, INT: 1000, END: 14000 }, 'Applicant');
+  const p = J.previewHire(TEAM, CLEANER_ONLY, { MAN: 9000, INT: 1000, END: 14000 }, 'Applicant');
   assert.equal(p.hire.name, 'Applicant');
   assert.equal(p.job, 'Cleaner', 'MAN 9,000 beats Strongest1 (6,850) for the one Cleaner place');
   assert.deepEqual(p.replaces.map((d) => [d.employee.name, d.from, d.to]), [['Strongest1', 'Cleaner', 'Sales Apprentice']]);
@@ -376,7 +379,7 @@ test('previewHire: a newcomer weaker than everyone is the one to let go', () => 
 });
 
 test('previewHire: a newcomer with no effect changes nobody', () => {
-  const p = J.previewHire(TEAM, J.DEFAULT_LIMITS, { MAN: 3000, INT: 2000, END: 4000 });
+  const p = J.previewHire(TEAM, CLEANER_ONLY, { MAN: 3000, INT: 2000, END: 4000 });
   assert.equal(p.job, 'Sales Assistant', 'no limit there');
   assert.deepEqual(p.replaces, []);
   assert.deepEqual(p.knockOn, []);
@@ -416,4 +419,65 @@ test('previewHire with the Adult Novelties line-up: 3 Sexpert, 1 Store Manager, 
   const moveOf = (name) => h.advice.moves.find((m) => m.employee.name === name);
   assert.deepEqual(names(moveOf('Applicant').replaces), ['Staff3']);
   assert.deepEqual(names(moveOf('Staff3').replaces), ['Staff4']);
+});
+
+// ---------- Filling the line-up: a limit is how many you want, met or not ----------
+
+test('suggestJobs: limited places nobody meets are filled by the closest, hardest job first', () => {
+  const m = J.suggestJobs(TEAM, J.DEFAULT_LIMITS); // Cleaner, Bookkeeper, Supervisor, Trainer: 1 each
+  assert.deepEqual(jobsOf(m), {
+    shy: 'Trainer',        // nobody meets Trainer; Boss1 is closest
+    lulu: 'Supervisor',    // nobody left meets Supervisor; Strongest1 is closest (80 trains)
+    ski: 'Bookkeeper',     // likewise for Bookkeeper
+    dex: 'Cleaner',        // meets Cleaner, and beats Spare1 on MAN
+    noid: 'Sales Apprentice',
+    amelia: null,          // meets nothing, and every limited place is taken
+  });
+  assert.equal(m.get('shy').below, true, 'filled below stats is flagged');
+  assert.equal(m.get('dex').below, undefined, 'meets it, so not flagged');
+});
+
+test('suggestJobs: unlimited jobs and a limit of 0 are never filled below stats', () => {
+  const m = J.suggestJobs(TEAM, { Trainer: 0, Supervisor: 0, Bookkeeper: 0, Cleaner: 1 });
+  assert.deepEqual(['shy', 'lulu', 'ski'].map((id) => m.get(id).job), ['Sales Assistant', 'Cleaner', 'Sales Apprentice']);
+});
+
+test('suggestJobs: people who meet a job always beat the below-stats fill for it', () => {
+  const p = (id, stats) => ({ id, name: id, position: 'Cleaner', workingStats: stats });
+  const meetsIt = p('Meets', 'MAN 100 / INT 3500 / END 7000');   // exactly meets Supervisor
+  const closer = p('Close', 'MAN 100 / INT 3499 / END 99999');    // 1 INT short
+  const m = J.suggestJobs([closer, meetsIt], { Supervisor: 2 });
+  assert.equal(m.get('Meets').below, undefined);
+  assert.equal(m.get('Close').below, true);
+  assert.equal(J.suggestJobs([closer, meetsIt], { Supervisor: 1 }).get('Close').job, 'Bookkeeper', 'one place: the one who meets it gets it; Close drops to the hardest job they meet');
+});
+
+test('adviseRoles: below-stats placements are marked, and not also listed as closest', () => {
+  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  const move = a.moves.find((m) => m.employee.name === 'Boss1');
+  assert.deepEqual([move.to, move.belowTarget], ['Trainer', true]);
+  const trainer = roleOf(a, 'Trainer');
+  assert.deepEqual(names(trainer.best), ['Boss1']);
+  assert.ok(!names(trainer.closest).includes('Boss1'));
+});
+
+test('Adult Novelties line-up with a team still growing into it (real stats, 23 Nov 2026)', () => {
+  const LINE_UP = { Sexpert: 3, 'Store Manager': 1, 'Sales Assistant': 6, Cleaner: 0, Receptionist: 0, 'Marketing Manager': 0, 'HR Officer': 0 };
+  const rows = [
+    ['Sales Assistant', 'MAN 1,562 / INT 883 / END 1,350'], ['Sales Assistant', 'MAN 2,556 / INT 547 / END 5,050'],
+    ['Sales Assistant', 'MAN 2,680 / INT 2,088 / END 6,841'], ['Sales Assistant', 'MAN 2,724 / INT 732 / END 5,237'],
+    ['Sales Assistant', 'MAN 3,028 / INT 661 / END 5,150'], ['Sales Assistant', 'MAN 4,560 / INT 3,781 / END 2,543'],
+    ['Sexpert', 'MAN 3,564 / INT 2,255 / END 4,146'], ['Sexpert', 'MAN 6,944 / INT 8,812 / END 17,280'],
+    ['Sexpert', 'MAN 7,817 / INT 5,081 / END 10,377'], ['Store Manager', 'MAN 4,363 / INT 6,931 / END 10,713'],
+  ];
+  const team = rows.map(([position, workingStats], i) => ({ id: `p${i + 1}`, name: `P${i + 1}`, position, workingStats }));
+  const m = AN.suggestJobs(team, LINE_UP);
+  const count = (job) => [...m.values()].filter((s) => s.job === job).length;
+  assert.deepEqual([count('Sexpert'), count('Store Manager'), count('Sales Assistant')], [3, 1, 6], 'every place filled');
+  // Sexpert: closest three by trains (P8 25, P10 63, P9 101). Store Manager: P3 (80) just beats P7 (82).
+  assert.deepEqual(['p8', 'p10', 'p9'].map((id) => m.get(id).job), ['Sexpert', 'Sexpert', 'Sexpert']);
+  assert.equal(m.get('p3').job, 'Store Manager');
+  assert.equal(m.get('p3').below, true);
+  assert.deepEqual(['p1', 'p6'].map((id) => [m.get(id).job, m.get(id).below]), [['Sales Assistant', true], ['Sales Assistant', true]]);
+  assert.equal(AN.adviseRoles(team, LINE_UP).stuck.length, 0, 'nobody is left without a place');
 });

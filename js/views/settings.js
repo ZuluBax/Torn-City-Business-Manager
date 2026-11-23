@@ -69,7 +69,7 @@
       </div>
 
       ${ui.panel('Job limits', jobs.hasJobs ? `
-        <p class="muted small">Jobs for your company type, <strong>${esc(jobs.table.name)}</strong>, from Torn. The most people you want in each job. Job suggestions on the Employees page give a full job to the strongest people, and point everyone else at their next-best job. Leave a box empty for no limit. Use 0 to never suggest that job.</p>
+        <p class="muted small">Jobs for your company type, <strong>${esc(jobs.table.name)}</strong>, from Torn. How many people you want in each job (your line-up). Suggestions fill each job with the strongest people who meet its stats; if there aren't enough, the closest people fill the rest, marked &ldquo;below stats&rdquo;. Leave a box empty for no limit (never filled below stats). Use 0 to never suggest that job.</p>
         <form id="limits-form" class="form-grid form-grid-limits" novalidate>
           <p class="form-error" role="alert" hidden></p>
           ${jobs.JOBS.map((j) => ui.field({ label: j.name, name: j.name, value: s.jobLimits && s.jobLimits[j.name] != null ? String(s.jobLimits[j.name]) : '', placeholder: 'No limit', attrs: 'inputmode="numeric" autocomplete="off" maxlength="2"' })).join('')}

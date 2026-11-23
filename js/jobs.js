@@ -173,6 +173,21 @@
         .sort((a, b) => order.reduce((d, k) => d || b.stats[k] - a.stats[k], 0));
     }
 
+    const totalShort = (s) => Object.values(s).reduce((a, b) => a + b, 0);
+    const trainsOrMax = (stats, job) => { const t = trainsToMeet(stats, job); return t == null ? Infinity : t; };
+
+    // People with stats who don't meet `job`, nearest first: fewest trains (can't train toward
+    // it = last), then smallest total shortfall, then name so the order is fixed.
+    function closestTo(employees, job) {
+      return (employees || [])
+        .map((e) => ({ e, stats: parseStats(e && e.workingStats) }))
+        .filter((r) => r.stats && !meets(r.stats, job))
+        .sort((a, b) => (trainsOrMax(a.stats, job) - trainsOrMax(b.stats, job))
+          || (totalShort(shortfall(a.stats, job)) - totalShort(shortfall(b.stats, job)))
+          || String(a.e.name).localeCompare(String(b.e.name)))
+        .map((r) => r.e);
+    }
+
     // Settings form -> { limits, errors }. Blank = no limit; 0 = never suggest this job.
     // Unknown job names are dropped (e.g. from another company type) rather than rejected.
     function cleanLimits(raw) {
@@ -234,6 +249,15 @@
         if (holders.length) for (const e of ranked.slice(placed.length)) lostTo.get(e.id).push({ job: job.name, takenBy: holders });
         for (const e of placed) out.set(e.id, { job: job.name, lostTo: lostTo.get(e.id) });
         left = left.filter((e) => !placed.includes(e));
+        // A limit is the line-up the user wants, so places nobody meets the stats for still get
+        // filled, by whoever left is closest. Torn lets people work below the recommended stats,
+        // just less effectively. These carry below: true so the page can say so.
+        if (limited) {
+          const room = lim[job.name] - (used[job.name] || 0) - placed.length;
+          const fill = room > 0 ? closestTo(left, job).slice(0, room) : [];
+          for (const e of fill) out.set(e.id, { job: job.name, lostTo: lostTo.get(e.id), below: true });
+          left = left.filter((e) => !fill.includes(e));
+        }
       }
       for (const e of left) out.set(e.id, { job: null, lostTo: lostTo.get(e.id) });
       for (const e of employees || []) {
@@ -263,13 +287,12 @@
       const sugs = suggestJobs(staff, limits);
       const lim = limits || {};
       const withStats = staff.map((e) => ({ e, stats: parseStats(e.workingStats) })).filter((r) => r.stats);
-      const totalShort = (s) => Object.values(s).reduce((a, b) => a + b, 0);
 
       const roles = [...JOBS].reverse().map((job) => {
         const best = staff.filter((e) => sugs.get(e.id) && sugs.get(e.id).job === job.name);
         const alsoMeets = rankForJob(staff, job.name).map((r) => r.employee).filter((e) => !best.includes(e));
         const closest = withStats
-          .filter((r) => !meets(r.stats, job))
+          .filter((r) => !meets(r.stats, job) && !best.includes(r.e))
           .map((r) => ({ employee: r.e, short: shortfall(r.stats, job), trains: trainsToMeet(r.stats, job) }))
           .sort((a, b) => (a.trains - b.trains) || (totalShort(a.short) - totalShort(b.short)) || a.employee.name.localeCompare(b.employee.name))
           .slice(0, CLOSEST_SHOWN);
@@ -291,7 +314,7 @@
           const replaces = Number.isInteger(lim[sug.job])
             ? staff.filter((x) => x !== e && findJob(x.position) && findJob(x.position).name === sug.job && !(sugs.get(x.id) && sugs.get(x.id).job === sug.job))
             : [];
-          moves.push({ employee: e, from: e.position, to: sug.job, chosen: !!sug.chosen, belowNow: !!now && !meets(stats, now), replaces });
+          moves.push({ employee: e, from: e.position, to: sug.job, chosen: !!sug.chosen, belowNow: !!now && !meets(stats, now), belowTarget: !!sug.below, replaces });
         }
       }
       // Array sort is stable, so people heading to the same job keep the team's order.

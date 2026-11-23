@@ -2,14 +2,23 @@
 
 ## Where we left off (23 Nov 2026)
 
-**New hire check + "replaces" in the Role advisor** (not committed, not deployed yet):
-- Each suggested move into a limited job now says who it replaces.
-- New hire check panel on the Employees page: enter MAN/INT/END, see their job, who they
-  replace, knock-on moves, and who to let go if the company is full.
-- Tests: 79 pass (`node --test tests/*.test.js`), incl. the Adult Novelties line-up below.
-  Checked in a browser on a localhost copy with made-up staff. Phone width not checked.
-- Wanted line-up (from the owner): **3 Sexpert, 1 Store Manager, 6 Sales Assistant**. Set in
-  Settings → Job limits (it's data, not code). Recommended: the other four jobs at 0.
+All committed, pushed and deployed.
+- **New hire check** (Employees page): enter MAN/INT/END, see their job, who they replace,
+  knock-on moves, and who to let go if the company is full (10/10 today).
+- **Role advisor** moves say who each move replaces.
+- **Fill the line-up:** a job limit is now a target. If too few meet a limited job's stats, the
+  closest people fill it, marked *below stats* (unlimited jobs are never filled this way).
+- Live job limits (set 23 Nov): **Sexpert 3, Store Manager 1, Sales Assistant 6**, Cleaner /
+  Receptionist / Marketing Manager / HR Officer 0. (Before: specials 1 each, rest unlimited.)
+- With those limits the advisor suggested one swap on 23 Nov: a Sales Assistant ↔ a Sexpert
+  (the Sales Assistant is closer to Sexpert's stats).
+- Tests: 84 pass. Checked on a throwaway copy of the real data (Pi port 8011). Phone width
+  not checked.
+- Gotcha: the Pi has no `sqlite3` CLI. Copy the DB with Python's `sqlite3` backup, not `cp`
+  (a plain copy missed recent changes still in the WAL file).
+
+Idea: the fill uses trains-to-meet with that job's gains, so a Sexpert spot can go to someone
+who's below stats everywhere. Fine for now; revisit with effectiveness data.
 
 ## Where we left off (17 Nov 2026)
 
