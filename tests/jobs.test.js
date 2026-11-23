@@ -345,3 +345,75 @@ test('fromTorn: a malformed Torn entry gives null', () => {
   assert.equal(JOBS.fromTorn('1', { name: 'X' }), null);
   assert.equal(JOBS.fromTorn('1', { name: 'X', positions: { A: { man_required: 0 } } }), null);
 });
+
+// ---------- Who replaces whom, and the new hire check ----------
+
+test('adviseRoles: a move into a full limited job names who it replaces', () => {
+  const a = J.adviseRoles(TEAM, J.DEFAULT_LIMITS);
+  const move = (name) => a.moves.find((m) => m.employee.name === name);
+  // Cleaner has a limit of 1. Cleaner1 and NoStats hold it on Torn; Strongest1 takes it.
+  assert.deepEqual(names(move('Strongest1').replaces), ['Cleaner1', 'NoStats']);
+  // Sales Apprentice has no limit, so moving in pushes nobody out.
+  assert.deepEqual(move('Cleaner1').replaces, []);
+});
+
+test('previewHire: a stronger newcomer takes the limited job and the old holder drops down', () => {
+  const p = J.previewHire(TEAM, J.DEFAULT_LIMITS, { MAN: 9000, INT: 1000, END: 14000 }, 'Applicant');
+  assert.equal(p.hire.name, 'Applicant');
+  assert.equal(p.job, 'Cleaner', 'MAN 9,000 beats Strongest1 (6,850) for the one Cleaner place');
+  assert.deepEqual(p.replaces.map((d) => [d.employee.name, d.from, d.to]), [['Strongest1', 'Cleaner', 'Sales Apprentice']]);
+  assert.deepEqual(p.knockOn, [], 'nobody else changes');
+  assert.ok(p.advice.moves.some((m) => m.employee === p.hire && m.to === 'Cleaner'), 'the full move list includes the hire');
+  assert.equal(p.letGo.name, 'NewHire', 'meets no job, so the weakest fit if the company is full');
+});
+
+test('previewHire: a newcomer weaker than everyone is the one to let go', () => {
+  const p = J.previewHire(TEAM, J.DEFAULT_LIMITS, { MAN: 0, INT: 0, END: 0 });
+  assert.equal(p.job, null);
+  assert.deepEqual(p.replaces, []);
+  assert.equal(p.letGo, p.hire, '34 trains from any job, one more than NewHire');
+  assert.equal(p.hire.name, 'New hire', 'default name');
+});
+
+test('previewHire: a newcomer with no effect changes nobody', () => {
+  const p = J.previewHire(TEAM, J.DEFAULT_LIMITS, { MAN: 3000, INT: 2000, END: 4000 });
+  assert.equal(p.job, 'Sales Assistant', 'no limit there');
+  assert.deepEqual(p.replaces, []);
+  assert.deepEqual(p.knockOn, []);
+});
+
+test('previewHire: bad stats give null instead of a guess', () => {
+  assert.equal(J.previewHire(TEAM, {}, { MAN: 1, INT: 2 }), null);
+  assert.equal(J.previewHire(TEAM, {}, { MAN: -1, INT: 2, END: 3 }), null);
+  assert.equal(J.previewHire(TEAM, {}, { MAN: 1.5, INT: 2, END: 3 }), null);
+  assert.equal(J.previewHire(TEAM, {}, null), null);
+});
+
+test('previewHire with the Adult Novelties line-up: 3 Sexpert, 1 Store Manager, 6 Sales Assistant', () => {
+  const LINE_UP = { Sexpert: 3, 'Store Manager': 1, 'Sales Assistant': 6, Cleaner: 0, Receptionist: 0, 'Marketing Manager': 0, 'HR Officer': 0 };
+  assert.deepEqual(AN.cleanLimits(LINE_UP), { limits: LINE_UP, errors: {} });
+  const p = (n, position, int, end) => ({ id: `e${n}`, name: `Staff${n}`, position, workingStats: `MAN 2500 / INT ${int} / END ${end}` });
+  // 3 Sexperts (INT 10k+), 1 Store Manager (END 8k+), 6 Sales Assistants: a full team of 10.
+  const team = [
+    p(1, 'Sexpert', 12000, 9000), p(2, 'Sexpert', 11000, 9000), p(3, 'Sexpert', 10500, 9000),
+    p(4, 'Store Manager', 5000, 8500),
+    ...[5, 6, 7, 8, 9, 10].map((n) => p(n, 'Sales Assistant', 2000, 4000 + n * 100)),
+  ];
+  const now = AN.adviseRoles(team, LINE_UP);
+  assert.deepEqual(now.moves, [], 'everyone is already in the right place');
+  assert.deepEqual(now.stuck, []);
+
+  // A newcomer with INT 11,500 bumps the weakest Sexpert, who becomes Store Manager
+  // (END 9,000 beats Staff4's 8,500), who in turn drops to Sales Assistant, pushing out the weakest seller.
+  const h = AN.previewHire(team, LINE_UP, { MAN: 2500, INT: 11500, END: 9000 }, 'Applicant');
+  assert.equal(h.job, 'Sexpert');
+  assert.deepEqual(h.replaces.map((c) => [c.employee.name, c.from, c.to]), [['Staff3', 'Sexpert', 'Store Manager']]);
+  assert.deepEqual(h.knockOn.map((c) => [c.employee.name, c.from, c.to]), [
+    ['Staff4', 'Store Manager', 'Sales Assistant'],
+    ['Staff5', 'Sales Assistant', null],
+  ]);
+  assert.equal(h.letGo.name, 'Staff5', 'the one left without a place is who to let go when full');
+  const moveOf = (name) => h.advice.moves.find((m) => m.employee.name === name);
+  assert.deepEqual(names(moveOf('Applicant').replaces), ['Staff3']);
+  assert.deepEqual(names(moveOf('Staff3').replaces), ['Staff4']);
+});

@@ -218,8 +218,18 @@ two jobs with the same main requirement, so ties go to the smaller total, then t
     the two closest who don't yet (with the shortfall and rough trains), and who's in it on
     Torn now. *Unfilled* means people meet the job but are suggested elsewhere (a harder
     job or your chosen job); *Nobody qualifies yet* means nobody meets it.
+  - A move into a job with a limit says who it **replaces** (whoever holds that job on Torn
+    now and is suggested elsewhere). Someone who meets a job but finds every job they meet
+    full shows as *No place left · Jobs full*.
   - It uses exactly the same rules as the Suggested job column, so the two never disagree.
     It doesn't weigh effectiveness or addiction.
+- **New hire check** panel (Employees page, under the Role advisor): type a newcomer's MAN,
+  INT and END (and a name if you like). It works out the job they'd get, who they replace,
+  any knock-on moves, and the full move list with them in. If the company is full on Torn
+  (staff = capacity), it names the **weakest fit** to let go: someone with no place first,
+  then the lowest job, then the lowest stats for that job. That can be the newcomer, which
+  means hiring them won't help. Nothing is saved; once they're hired, Import from Torn adds
+  them. Logic: `previewHire` in `js/jobs.js` (unit tested).
 - Each profile shows the same details, including how far short they are and roughly how many
   trains it will take to catch up.
 

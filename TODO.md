@@ -1,5 +1,16 @@
 # TODO
 
+## Where we left off (23 Nov 2026)
+
+**New hire check + "replaces" in the Role advisor** (not committed, not deployed yet):
+- Each suggested move into a limited job now says who it replaces.
+- New hire check panel on the Employees page: enter MAN/INT/END, see their job, who they
+  replace, knock-on moves, and who to let go if the company is full.
+- Tests: 79 pass (`node --test tests/*.test.js`), incl. the Adult Novelties line-up below.
+  Checked in a browser on a localhost copy with made-up staff. Phone width not checked.
+- Wanted line-up (from the owner): **3 Sexpert, 1 Store Manager, 6 Sales Assistant**. Set in
+  Settings → Job limits (it's data, not code). Recommended: the other four jobs at 0.
+
 ## Where we left off (17 Nov 2026)
 
 **Sold the Music Store; now running an Adult Novelties company.** The app now works for any

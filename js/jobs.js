@@ -22,6 +22,7 @@
   const MAX_JOBS = 30;      // Torn's biggest type has 13; anything far beyond that is junk
   const MAX_NAME = 60;
   const MAX_STAT = 1e9;
+  const HIRE_ID = '__new_hire__'; // the pretend employee in previewHire; never saved
 
   // "MAN 6,850 / INT 1,669 / END 13,146" -> { MAN: 6850, INT: 1669, END: 13146 }.
   // Working stats can also be typed by hand, so accept any order, "MAN: 6850", and
@@ -286,7 +287,11 @@
           const target = now || JOBS[0];
           stuck.push({ employee: e, job: target.name, short: shortfall(stats, target), trains: trainsToMeet(stats, target) });
         } else if (!now || now.name !== sug.job) {
-          moves.push({ employee: e, from: e.position, to: sug.job, chosen: !!sug.chosen, belowNow: !!now && !meets(stats, now) });
+          // Only a limited job has to be emptied before someone new fits in; an unlimited one has room.
+          const replaces = Number.isInteger(lim[sug.job])
+            ? staff.filter((x) => x !== e && findJob(x.position) && findJob(x.position).name === sug.job && !(sugs.get(x.id) && sugs.get(x.id).job === sug.job))
+            : [];
+          moves.push({ employee: e, from: e.position, to: sug.job, chosen: !!sug.chosen, belowNow: !!now && !meets(stats, now), replaces });
         }
       }
       // Array sort is stable, so people heading to the same job keep the team's order.
@@ -294,9 +299,61 @@
       return { roles, moves, stuck };
     }
 
+    /*
+     * "What if I hire someone with these stats?" Nothing is saved: the newcomer is a temporary
+     * employee (id HIRE_ID) run through the same rules as everyone else. -> null if the stats
+     * aren't three whole numbers, else {
+     *   hire:     the temporary employee,
+     *   job:      job name | null (the job they'd get),
+     *   replaces: [{ employee, from, to }]  staff the hire pushes out of the job they'd have had,
+     *   knockOn:  [{ employee, from, to }]  everyone else whose suggested job changes as a result,
+     *   advice:   adviseRoles() with the hire included (full move list),
+     *   letGo:    employee  the weakest fit with the hire in (maybe the hire), for a full company
+     * }
+     */
+    function previewHire(employees, limits, stats, name) {
+      if (!stats || !STAT_KEYS.every((k) => Number.isInteger(stats[k]) && stats[k] >= 0 && stats[k] <= MAX_STAT)) return null;
+      const staff = (employees || []).filter((e) => e && e.status !== 'left');
+      const hire = {
+        id: HIRE_ID, name: String(name || '').trim().slice(0, MAX_NAME) || 'New hire', position: '', status: 'active',
+        workingStats: STAT_KEYS.map((k) => `${k} ${stats[k]}`).join(' / '),
+      };
+      const before = suggestJobs(staff, limits);
+      const after = suggestJobs([...staff, hire], limits);
+      const job = after.get(HIRE_ID).job;
+      const changed = staff.filter((e) => before.has(e.id) && before.get(e.id).job !== after.get(e.id).job)
+        .map((e) => ({ employee: e, from: before.get(e.id).job, to: after.get(e.id).job }));
+      const replaces = changed.filter((c) => job && c.from === job);
+      return {
+        hire, job, replaces,
+        knockOn: changed.filter((c) => !replaces.includes(c)),
+        advice: adviseRoles([...staff, hire], limits),
+        letGo: weakestFit([...staff, hire], after),
+      };
+    }
+
+    /*
+     * The person contributing least by stats, given suggestions `sugs`. Someone who meets no job
+     * is weaker than anyone placed (most trains from the entry job first; can't-train-to-it worst).
+     * Among the placed, the easiest suggested job is weakest, then the lowest stats for that job.
+     */
+    function weakestFit(list, sugs) {
+      const scored = list.map((e) => ({ e, stats: parseStats(e.workingStats), job: sugs.get(e.id) && findJob(sugs.get(e.id).job) }))
+        .filter((r) => r.stats);
+      if (!scored.length) return null;
+      const hardness = (r) => (r.job ? JOBS.indexOf(r.job) : -1);
+      const trainsAway = (r) => { const t = trainsToMeet(r.stats, JOBS[0]); return t == null ? Infinity : t; };
+      scored.sort((a, b) => {
+        if (hardness(a) !== hardness(b)) return hardness(a) - hardness(b);
+        if (!a.job) return trainsAway(b) - trainsAway(a);
+        return Object.keys(a.job.needs).reduce((d, k) => d || a.stats[k] - b.stats[k], 0);
+      });
+      return scored[0].e;
+    }
+
     return {
-      table, hasJobs: JOBS.length > 0, JOBS, STAT_KEYS, DEFAULT_LIMITS: defaultLimits(JOBS),
-      parseStats, findJob, shortfall, meets, trainsToMeet, jobFit, rankForJob, cleanLimits, suggestJobs, validChoice, adviseRoles,
+      table, hasJobs: JOBS.length > 0, JOBS, STAT_KEYS, DEFAULT_LIMITS: defaultLimits(JOBS), HIRE_ID,
+      parseStats, findJob, shortfall, meets, trainsToMeet, jobFit, rankForJob, cleanLimits, suggestJobs, validChoice, adviseRoles, previewHire,
     };
   }
 

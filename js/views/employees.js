@@ -119,7 +119,7 @@
     const rows = J().rankForJob(current, job.name).map((r, i) => ({ ...r, rank: i + 1 }));
     const sugs = suggestions();
     const limit = (db.settings().jobLimits || {})[job.name];
-    const limitText = Number.isInteger(limit) ? ` Limit: ${limit} ${limit === 1 ? 'person' : 'people'}, so only the top ${limit === 1 ? 'one is' : `${limit} are`} suggested here.` : '';
+    const limitText = limit === 0 ? ' Limit: 0, so nobody is suggested here.' : Number.isInteger(limit) ? ` Limit: ${limit} ${limit === 1 ? 'person' : 'people'}, so only the top ${limit === 1 ? 'one is' : `${limit} are`} suggested here.` : '';
     const needs = `Needs ${keys.map((k) => `${U.formatNumber(job.needs[k])} ${k}`).join(' and ')}.`;
     el.querySelector('[data-best]').innerHTML = `<p class="small muted">${esc(needs)} Ranked by ${esc(keys.join(', then '))}.${esc(limitText)}</p>` + ui.table({
       empty: `Nobody meets the ${job.name} stats yet.`,
@@ -146,6 +146,9 @@
   };
   const nearText = (c) => `${ui.employeeLink(c.employee.id)} <span class="small muted">${esc(shortText(c.short))} short${esc(trainsText(c.trains))}</span>`;
 
+  // The pretend newcomer from the New hire check isn't in the database, so it can't be a link.
+  const personLink = (e) => (e.id === J().HIRE_ID ? `<strong>${esc(e.name)}</strong> <span class="badge badge-blue">New hire</span>` : ui.employeeLink(e.id));
+
   function movesHtml(advice) {
     if (!advice.moves.length && !advice.stuck.length) return '<p class="muted">Everyone is already in the best job for their stats.</p>';
     const items = advice.moves.map((m) => {
@@ -153,9 +156,91 @@
         m.belowNow ? `<span class="badge badge-amber" title="Their stats are below what ${esc(m.from)} recommends.">Below stats now</span>` : '',
         m.chosen ? '<span class="badge badge-blue" title="You picked this job for them.">Your choice</span>' : '',
       ].filter(Boolean).join(' ');
-      return `<li>${ui.employeeLink(m.employee.id)}: ${esc(m.from)} → <strong>${esc(m.to)}</strong> ${tags}</li>`;
-    }).concat(advice.stuck.map((s) => `<li>${ui.employeeLink(s.employee.id)}: no job fits yet. <span class="small muted">${esc(shortText(s.short))} short of ${esc(s.job)}${esc(trainsText(s.trains))}</span></li>`));
+      const from = m.employee.id === J().HIRE_ID ? 'joins' : esc(m.from);
+      const replaces = m.replaces && m.replaces.length ? ` <span class="small muted">replaces ${m.replaces.map((x) => esc(x.name)).join(', ')}</span>` : '';
+      return `<li>${personLink(m.employee)}: ${from} → <strong>${esc(m.to)}</strong>${replaces} ${tags}</li>`;
+    }).concat(advice.stuck.map((s) => (Object.keys(s.short).length
+      ? `<li>${personLink(s.employee)}: no job fits yet. <span class="small muted">${esc(shortText(s.short))} short of ${esc(s.job)}${esc(trainsText(s.trains))}</span></li>`
+      // They meet a job, but every job they meet is full of stronger people (or limited to 0).
+      : `<li>${personLink(s.employee)}: <strong>no place left</strong> <span class="badge badge-amber" title="Every job their stats meet is already full of stronger people.">Jobs full</span> <span class="small muted">Let them go, or raise a job limit in Settings.</span></li>`)));
     return `<ul class="advice-list">${items.join('')}</ul>`;
+  }
+
+  // ---------- New hire check: "where would this person go, and who would they replace?" ----------
+
+  // Kept at module level so the typed stats survive re-renders (e.g. a Pi refresh).
+  const hireCheck = { name: '', MAN: '', INT: '', END: '' };
+
+  function hireFormHtml() {
+    const box = (k) => `<label class="hire-field"><span>${k}</span><input type="text" inputmode="numeric" name="${k}" value="${esc(hireCheck[k])}" placeholder="0" autocomplete="off" required></label>`;
+    return `<form class="hire-form" data-hire-form novalidate>
+        <label class="hire-field hire-name"><span>Name (optional)</span><input type="text" name="name" value="${esc(hireCheck.name)}" maxlength="60" placeholder="New hire" autocomplete="off"></label>
+        ${J().STAT_KEYS.map(box).join('')}
+        <button type="submit" class="btn btn-primary">Check</button>
+        <button type="button" class="btn btn-ghost" data-hire-clear>Clear</button>
+      </form>
+      <p class="small muted">Type their working stats (MAN, INT, END). Nothing is saved: once they're hired, Import from Torn adds them for real.</p>
+      <div data-hire-result aria-live="polite"></div>`;
+  }
+
+  // "9,000" or "9000" -> 9000; anything else -> NaN so the form can say which box is wrong.
+  const statInput = (text) => (/^\s*[\d,]+\s*$/.test(String(text)) ? Number(String(text).replace(/[\s,]/g, '')) : NaN);
+
+  function hireResultHtml() {
+    if (!J().STAT_KEYS.some((k) => String(hireCheck[k]).trim())) return '';
+    const stats = Object.fromEntries(J().STAT_KEYS.map((k) => [k, statInput(hireCheck[k])]));
+    const bad = J().STAT_KEYS.filter((k) => !Number.isInteger(stats[k]));
+    if (bad.length) return `<p class="form-error" role="alert">Enter a whole number for ${bad.join(', ')}.</p>`;
+    const p = J().previewHire(db.all('employees'), db.settings().jobLimits, stats, hireCheck.name);
+    if (!p) return '<p class="form-error" role="alert">Those stats look wrong. Use whole numbers from 0 up.</p>';
+    const name = esc(p.hire.name);
+    const move = (c) => `<li>${ui.employeeLink(c.employee.id)}: ${c.from ? esc(c.from) : 'no job'} → <strong>${c.to ? esc(c.to) : 'no job fits'}</strong></li>`;
+    const parts = [];
+    if (p.job) {
+      parts.push(`<p><strong>${name}</strong> would go in <strong>${esc(p.job)}</strong>.</p>`);
+    } else {
+      const stuck = p.advice.stuck.find((s) => s.employee === p.hire);
+      parts.push(`<p><strong>${name}</strong> wouldn't fit any job with room${stuck ? ` (${esc(shortText(stuck.short))} short of ${esc(stuck.job)}${esc(trainsText(stuck.trains))})` : ''}.</p>`);
+    }
+    parts.push(p.replaces.length
+      ? `<h3 class="sub-heading">They replace</h3><ul class="advice-list">${p.replaces.map(move).join('')}</ul>`
+      : '<p class="muted">They don\'t push anyone out of their job.</p>');
+    if (p.knockOn.length) parts.push(`<h3 class="sub-heading">Knock-on changes</h3><ul class="advice-list">${p.knockOn.map(move).join('')}</ul>`);
+    parts.push(letGoHtml(p));
+    parts.push(`<h3 class="sub-heading">All moves if you hire them</h3>${movesHtml(p.advice)}`);
+    return parts.join('');
+  }
+
+  // Torn caps staff at the company's capacity, so a full company has to lose someone to hire.
+  function letGoHtml(p) {
+    const tc = db.settings().tornCompany;
+    const full = tc && Number.isInteger(tc.employeesHired) && Number.isInteger(tc.employeesCapacity) && tc.employeesHired >= tc.employeesCapacity;
+    const who = p.letGo === p.hire ? `<strong>${esc(p.hire.name)}</strong> (the newcomer)` : (p.letGo ? ui.employeeLink(p.letGo.id) : null);
+    if (!who) return '';
+    const why = '<span class="small muted">(Weakest fit = lowest job, then lowest stats for that job. It doesn\'t weigh effectiveness, addiction or activity.)</span>';
+    if (p.letGo === p.hire) {
+      return `<p>${full ? `Your company is full (${tc.employeesHired}/${tc.employeesCapacity}). ` : ''}<span class="badge badge-amber">Weakest fit</span> ${who} would be the weakest person on the team, so hiring them won't help much. ${why}</p>`;
+    }
+    return full
+      ? `<p><span class="badge badge-amber">Company full</span> ${tc.employeesHired}/${tc.employeesCapacity} staff. To hire them, someone has to go: the weakest fit would be ${who}. ${why}</p>`
+      : `<p class="small">If your company is full, the weakest fit to replace would be ${who}. ${why}</p>`;
+  }
+
+  function bindHireCheck(el) {
+    const form = el.querySelector('[data-hire-form]');
+    if (!form) return;
+    const out = el.querySelector('[data-hire-result]');
+    const show = () => { out.innerHTML = hireResultHtml(); };
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      for (const k of ['name', ...J().STAT_KEYS]) hireCheck[k] = form.elements[k].value;
+      show();
+    });
+    el.querySelector('[data-hire-clear]').addEventListener('click', () => {
+      for (const k of ['name', ...J().STAT_KEYS]) { hireCheck[k] = ''; form.elements[k].value = ''; }
+      show();
+    });
+    show();
   }
 
   /*
@@ -281,6 +366,7 @@
       </div>
       <div data-table></div>
       ${ui.panel('Role advisor', roleAdvisorHtml(), { cls: 'panel-best' })}
+      ${J().hasJobs ? ui.panel('New hire check', hireFormHtml(), { cls: 'panel-best' }) : ''}
       ${ui.panel('Best for each job', '<div data-best></div>', {
         cls: 'panel-best',
         actions: `<select data-best-job aria-label="Choose a job">${ui.options(J().JOBS.map((j) => j.name), bestFor.job)}</select>`,
@@ -288,6 +374,7 @@
     el.querySelector('[data-add]').addEventListener('click', () => F.employeeForm());
     el.querySelector('[data-best-job]').addEventListener('change', (ev) => { bestFor.job = ev.target.value; renderBestForJob(el); });
     renderBestForJob(el);
+    bindHireCheck(el);
     const tornBtn = el.querySelector('[data-torn]');
     if (tornBtn) tornBtn.addEventListener('click', () => F.tornImport());
     ui.bindFilters(el, filters, () => renderTable(el));
