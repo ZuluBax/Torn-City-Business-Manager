@@ -8,8 +8,8 @@
   Answers "who are my best 3 Sexperts?" without asking Claude.
 - It respects chosen jobs (LittleIsLittle is pinned to Store Manager), so Sexpert today is
   fujiwaranovari, raedwulf, DexXoO, all below the 10,000 INT bar.
-- Checked on a throwaway copy on the Pi (8011). Phone width still not checked (the resize
-  didn't take). Tip: Chrome forces https on the Pi's IP; use `ssh -L 8011:localhost:8011`.
+- Deployed 23 Nov. Checked on a throwaway copy on the Pi (8011). Phone width not checked (owner
+  said no need). Tip: Chrome forces https on the Pi's IP; use `ssh -L 8011:localhost:8011`.
 
 ## Earlier on 23 Nov 2026
 
