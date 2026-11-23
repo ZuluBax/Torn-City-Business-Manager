@@ -150,7 +150,36 @@
     const shown = list.slice(0, max).map((e) => ui.employeeLink(e.id)).join(', ');
     return list.length > max ? `${shown} <span class="muted">+${list.length - max} more</span>` : shown;
   };
-  const nearText = (c) => `${ui.employeeLink(c.employee.id)} <span class="small muted">${esc(shortText(c.short))} short${esc(trainsText(c.trains))}</span>`;
+  // A best-fit name, with how far short they are when the line-up had to fill the place below stats.
+  const fitText = (e, jobName) => {
+    const stats = J().parseStats(e.workingStats);
+    const job = J().findJob(jobName);
+    if (!stats || !job || J().meets(stats, job)) return ui.employeeLink(e.id);
+    return `${ui.employeeLink(e.id)} <span class="small muted">${esc(shortText(J().shortfall(stats, job)))} short</span>`;
+  };
+  // Strongest first, so a numbered list reads as a ranking: fewest trains to meet the job (0 = meets).
+  const byCloseness = (list, jobName) => {
+    const job = J().findJob(jobName);
+    const trains = (e) => {
+      const stats = J().parseStats(e.workingStats);
+      const t = stats && job ? J().trainsToMeet(stats, job) : null;
+      return t == null ? Infinity : t;
+    };
+    return [...list].sort((a, b) => (trains(a) - trains(b)) || a.name.localeCompare(b.name));
+  };
+  const fitList = (list, jobName) => byCloseness(list, jobName).map((e) => fitText(e, jobName)).join('<br>');
+
+  // "Who are my best N for each job?" answered straight from the line-up, hardest job first.
+  function lineUpHtml(advice) {
+    const items = advice.roles.filter((r) => r.best.length).map((r) => {
+      const count = r.limit != null ? `${r.best.length} of ${r.limit}` : `${r.best.length}`;
+      const names = byCloseness(r.best, r.job).map((e) =>`<li>${fitText(e, r.job)}</li>`).join('');
+      return `<li><strong>${esc(r.job)}</strong> <span class="small muted">${count}</span><ol>${names}</ol></li>`;
+    });
+    if (!items.length) return '';
+    return `<h3 class="sub-heading">Best line-up</h3><ul class="advice-list">${items.join('')}</ul>`;
+  }
+  const nearText = (c) =>`${ui.employeeLink(c.employee.id)} <span class="small muted">${esc(shortText(c.short))} short${esc(trainsText(c.trains))}</span>`;
 
   // The pretend newcomer from the New hire check isn't in the database, so it can't be a link.
   const personLink = (e) => {
@@ -267,7 +296,7 @@
       return '<p class="muted">No working stats yet. Import from Torn to fetch them, then this will show who suits each role.</p>';
     }
     const caveat = '<p class="small muted">Based on Torn\'s recommended stats and your job limits in Settings, using the latest working stats the app has. A job with a limit is filled to that number: if too few people meet its stats, the closest fill it, marked below stats. Train counts are rough (as if they train in that job). It doesn\'t weigh effectiveness or addiction, and nothing changes on Torn until you move people there.</p>';
-    const moves = `<h3 class="sub-heading">Suggested moves</h3>${movesHtml(advice)}`;
+    const moves = lineUpHtml(advice) + `<h3 class="sub-heading">Suggested moves</h3>${movesHtml(advice)}`;
     if (compact) return moves + caveat;
     const table = `<h3 class="sub-heading">By role (hardest first)</h3>` + ui.table({
       rows: advice.roles,
@@ -275,7 +304,7 @@
         { label: 'Role', render: (r) => `<strong>${esc(r.job)}</strong>${r.limit != null ? `<br><span class="small muted">Limit ${r.limit}</span>` : ''}` },
         { label: 'Needs', render: (r) => `<span class="small">${esc(needsText(r.needs))}</span>` },
         { label: 'Best fit', render: (r) => {
-          if (r.best.length) return people(r.best, 3);
+          if (r.best.length) return fitList(r.best, r.job);
           // People who meet it went to other jobs (a harder one, or your pick): the role is open, not out of reach.
           if (r.alsoMeets.length) return '<span class="badge badge-amber" title="Everyone who meets it is suggested for another job. Use a chosen job to put someone here.">Unfilled</span>';
           return '<span class="badge badge-muted">Nobody qualifies yet</span>';

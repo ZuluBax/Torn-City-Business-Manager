@@ -1,6 +1,17 @@
 # TODO
 
-## Where we left off (23 Nov 2026)
+## Where we left off (23 Nov 2026, later)
+
+- **Best line-up** added to the top of the Role advisor (Dashboard and Employees): each job
+  that has people, its names closest-first, and how far short anyone below stats is. The
+  "Best fit" column in the By role table now shows everyone with their shortfall too.
+  Answers "who are my best 3 Sexperts?" without asking Claude.
+- It respects chosen jobs (LittleIsLittle is pinned to Store Manager), so Sexpert today is
+  fujiwaranovari, raedwulf, DexXoO, all below the 10,000 INT bar.
+- Checked on a throwaway copy on the Pi (8011). Phone width still not checked (the resize
+  didn't take). Tip: Chrome forces https on the Pi's IP; use `ssh -L 8011:localhost:8011`.
+
+## Earlier on 23 Nov 2026
 
 All committed, pushed and deployed.
 - **New hire check** (Employees page): enter MAN/INT/END, see their job, who they replace,
